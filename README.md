@@ -1,8 +1,8 @@
-# Pong – Handy als Controller
+# RETROCON – Retro Games · Handy als Controller
 
 Browser-Spiel, das per Smartphone-Neigung gesteuert wird. Kein App-Download, kein Login – einfach QR-Code scannen und spielen.
 
-**Live:** https://mirkoappel.github.io/pong-controller/
+**Live:** https://mirkoappel.github.io/retrocon/
 
 ---
 
@@ -24,7 +24,7 @@ Wenn das Konzept funktioniert, können weitere klassische Retro-Spiele (Breakout
 
 ## So funktioniert es
 
-1. Spielfeld auf Laptop/Desktop öffnen: https://mirkoappel.github.io/pong-controller/
+1. Spielfeld auf Laptop/Desktop öffnen: https://mirkoappel.github.io/retrocon/
 2. Spielmodus wählen: **1 Spieler** (gegen KI) oder **2 Spieler**
 3. QR-Code mit dem Handy scannen (gleiches WLAN oder Mobilfunk)
 4. Handy links/rechts neigen → Paddle bewegt sich hoch/runter
@@ -105,7 +105,7 @@ git push
 # GitHub Pages aktualisiert automatisch nach ~30 Sekunden
 ```
 
-GitHub Repo: https://github.com/mirkoappel/pong-controller
+GitHub Repo: https://github.com/mirkoappel/retrocon
 
 ---
 
