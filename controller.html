@@ -9,28 +9,28 @@
 :root { --color: #4fc3f7; }
 
 body {
-  background: #0f0f0f;
+  background: #2a2a2a;
+  width: 100dvw;
   height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
   user-select: none;
   -webkit-user-select: none;
-  font-family: 'Courier New', monospace;
   touch-action: none;
+  font-family: 'Courier New', monospace;
 }
 
-/* Portrait: Hinweis zum Drehen */
+/* ── Portrait: Drehhinweis ──────────────────────────────── */
 #rotate-hint {
   display: none;
+  position: fixed; inset: 0;
+  background: #1a1a1a;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 20px;
   color: #333;
 }
-#rotate-hint span { font-size: 0.7rem; letter-spacing: 0.2rem; }
+#rotate-hint span { font-size: 0.75rem; letter-spacing: 0.2rem; }
 #rotate-icon {
   width: 44px; height: 60px;
   border: 2px solid #2a2a2a;
@@ -41,162 +41,172 @@ body {
 
 @media (orientation: portrait) {
   #rotate-hint  { display: flex; }
-  #gamepad-wrap { display: none; }
+  #layout       { display: none; }
 }
 
-/* Status */
-#gamepad-wrap {
+/* ── Haupt-Layout ───────────────────────────────────────── */
+#layout {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 5fr 2fr 5fr;
+  grid-template-areas:
+    "hdr hdr hdr"
+    "dpad mid actions";
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+#hdr {
+  grid-area: hdr;
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 10px;
+  padding: 8px 16px;
+  background: #222;
+  border-bottom: 1px solid #1a1a1a;
+  font-size: 0.6rem;
+  letter-spacing: 0.12rem;
 }
-#status-bar {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 0.6rem; letter-spacing: 0.1rem;
-}
-#player-label { color: #2a2a2a; }
-#player-num   { color: var(--color); font-size: 0.75rem; font-weight: bold; }
-#conn-status  { display: flex; align-items: center; gap: 5px; color: #2a2a2a; transition: color 0.3s; }
+#player-label { color: #333; }
+#player-num   { color: var(--color); font-weight: bold; }
+#conn-status  { display: flex; align-items: center; gap: 5px; color: #333; transition: color 0.3s; }
 #conn-status.connected { color: #4caf50; }
 #conn-status.error     { color: #f44336; }
 #status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 #conn-status.connected #status-dot { animation: pulse 1.2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-/* NES Controller Body */
-#nes {
-  position: relative;
-  background: linear-gradient(175deg, #3d3d3d 0%, #2b2b2b 100%);
-  border-radius: 16px 16px 40% 40% / 16px 16px 22px 22px;
-  width: min(90vw, 560px);
-  height: min(40vw, 220px);
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+/* ── D-Pad-Bereich ──────────────────────────────────────── */
+#dpad-area {
+  grid-area: dpad;
+  display: flex;
   align-items: center;
-  padding: 0 30px;
-  box-shadow:
-    0 10px 40px rgba(0,0,0,0.9),
-    inset 0 1px 0 rgba(255,255,255,0.07),
-    inset 0 -4px 8px rgba(0,0,0,0.5);
+  justify-content: center;
+  background: #2a2a2a;
 }
 
-/* Dekorativer Riegel oben (NES-typisch) */
-#nes::before {
-  content: '';
-  position: absolute;
-  top: 14px; left: 50%;
-  transform: translateX(-50%);
-  width: 72px; height: 7px;
-  background: #222;
-  border-radius: 4px;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
-}
-
-/* ── D-Pad ─────────────────────────────────────────────── */
 #dpad {
+  --sz: min(38vw, 70vh);
   position: relative;
-  width: 114px;
-  height: 114px;
-  flex-shrink: 0;
+  width: var(--sz);
+  height: var(--sz);
   touch-action: none;
 }
 
-/* Kreuz-Segmente */
 .dp {
   position: absolute;
-  background: #181818;
+  background: #1e1e1e;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
   transition: background 0.04s, filter 0.04s;
 }
-.dp.active { background: #101010; filter: brightness(1.8); }
+.dp.active { background: #161616; filter: brightness(2); }
 
-#dp-c { top: 38px; left: 38px; width: 38px; height: 38px; }
-#dp-u { top:  0;   left: 38px; width: 38px; height: 38px; border-radius: 5px 5px 0 0; }
-#dp-d { top: 76px; left: 38px; width: 38px; height: 38px; border-radius: 0 0 5px 5px; }
-#dp-l { top: 38px; left:  0;   width: 38px; height: 38px; border-radius: 5px 0 0 5px; }
-#dp-r { top: 38px; left: 76px; width: 38px; height: 38px; border-radius: 0 5px 5px 0; }
+/* Kreuz: je 1/3 der Gesamtgröße */
+#dp-c { top: 33.33%; left: 33.33%; width: 33.34%; height: 33.34%; }
+#dp-u { top: 0;      left: 33.33%; width: 33.34%; height: 33.33%; border-radius: 10px 10px 0 0; }
+#dp-d { top: 66.67%; left: 33.33%; width: 33.34%; height: 33.33%; border-radius: 0 0 10px 10px; }
+#dp-l { top: 33.33%; left: 0;      width: 33.33%; height: 33.34%; border-radius: 10px 0 0 10px; }
+#dp-r { top: 33.33%; left: 66.67%; width: 33.33%; height: 33.34%; border-radius: 0 10px 10px 0; }
 
-/* Pfeil-Indikatoren */
 .dpa {
   position: absolute;
   width: 0; height: 0;
   pointer-events: none;
-  opacity: 0.18;
+  opacity: 0.15;
   transition: opacity 0.04s;
   z-index: 2;
 }
-.dpa.active { opacity: 0.85; }
-#a-u { top: 9px;    left: 50%;  transform: translateX(-50%); border: 6px solid transparent; border-bottom-color: #ccc; }
-#a-d { bottom: 9px; left: 50%;  transform: translateX(-50%); border: 6px solid transparent; border-top-color: #ccc; }
-#a-l { left: 9px;   top: 50%;   transform: translateY(-50%); border: 6px solid transparent; border-right-color: #ccc; }
-#a-r { right: 9px;  top: 50%;   transform: translateY(-50%); border: 6px solid transparent; border-left-color: #ccc; }
+.dpa.active { opacity: 0.8; }
+#a-u { top: 12%;  left: 50%; transform: translateX(-50%); border: min(1.8vw,12px) solid transparent; border-bottom-color: #ccc; }
+#a-d { bottom: 12%; left: 50%; transform: translateX(-50%); border: min(1.8vw,12px) solid transparent; border-top-color: #ccc; }
+#a-l { left: 12%;  top: 50%; transform: translateY(-50%); border: min(1.8vw,12px) solid transparent; border-right-color: #ccc; }
+#a-r { right: 12%; top: 50%; transform: translateY(-50%); border: min(1.8vw,12px) solid transparent; border-left-color: #ccc; }
 
-/* ── Mitte: SELECT + START ─────────────────────────────── */
-#middle {
+/* ── Mitte ──────────────────────────────────────────────── */
+#mid {
+  grid-area: mid;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 14px;
-  padding: 0 6px;
+  background: #272727;
+  border-left: 1px solid #1e1e1e;
+  border-right: 1px solid #1e1e1e;
 }
-.sys-row { display: flex; gap: 14px; }
+
 .sys-btn {
   background: #1e1e1e;
   border: none;
   border-radius: 30px;
-  padding: 5px 14px 6px;
+  padding: 7px 18px;
   color: #3a3a3a;
   font-family: 'Courier New', monospace;
-  font-size: 0.5rem;
+  font-size: 0.55rem;
   letter-spacing: 0.07rem;
   cursor: pointer;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.02);
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.7);
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
   transition: color 0.04s, box-shadow 0.04s;
+  width: 80%;
+  text-align: center;
 }
 .sys-btn.active { color: #555; box-shadow: inset 0 1px 2px rgba(0,0,0,0.9); }
 
 .stripe {
-  width: 56px; height: 2px;
+  width: 50%; height: 2px;
   background: linear-gradient(90deg, transparent, #1e1e1e, transparent);
 }
 
-/* ── Aktions-Buttons A + B ─────────────────────────────── */
-#actions {
-  position: relative;
-  width: 114px;
-  height: 90px;
-  flex-shrink: 0;
+/* ── Aktions-Buttons ────────────────────────────────────── */
+#actions-area {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #2a2a2a;
 }
+
+#actions {
+  --btn: min(16vw, 28vh);
+  position: relative;
+  width: calc(var(--btn) * 2.4);
+  height: calc(var(--btn) * 1.8);
+}
+
 .act-btn {
   position: absolute;
-  width: 48px; height: 48px;
+  width: var(--btn);
+  height: var(--btn);
   border-radius: 50%;
   border: none;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   font-family: 'Courier New', monospace;
-  font-size: 0.85rem; font-weight: bold;
+  font-size: min(4vw, 1.4rem);
+  font-weight: bold;
   color: rgba(0,0,0,0.3);
   background: #8C1F3E;
-  box-shadow: 0 5px 0 #5a1128, 0 7px 16px rgba(0,0,0,0.5);
+  box-shadow: 0 min(1.2vw,8px) 0 #5a1128, 0 min(1.5vw,10px) min(3vw,20px) rgba(0,0,0,0.5);
   transition: box-shadow 0.04s, transform 0.04s, filter 0.04s;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
 }
 .act-btn.active {
-  box-shadow: 0 1px 0 #5a1128, 0 2px 6px rgba(0,0,0,0.4);
-  transform: translateY(4px);
+  box-shadow: 0 2px 0 #5a1128, 0 3px 8px rgba(0,0,0,0.4);
+  transform: translateY(min(1vw,6px));
   filter: brightness(0.8);
 }
-/* NES: B links-unten, A rechts-oben (leicht diagonal) */
-#btn-b { bottom: 0; left: 6px; }
-#btn-a { top: 0;    right: 6px; }
+/* B links-unten, A rechts-oben */
+#btn-b { bottom: 0; left: 0; }
+#btn-a { top: 0;    right: 0; }
 
 #version {
-  position: fixed; bottom: 8px; right: 10px;
-  font-size: 0.55rem; color: #222;
+  position: fixed; bottom: 6px; right: 8px;
+  font-size: 0.5rem; color: #333;
   pointer-events: none;
 }
 </style>
@@ -208,8 +218,8 @@ body {
   <span>PHONE DREHEN</span>
 </div>
 
-<div id="gamepad-wrap">
-  <div id="status-bar">
+<div id="layout">
+  <div id="hdr">
     <span id="player-label">SPIELER</span>
     <span id="player-num">?</span>
     <div id="conn-status">
@@ -218,7 +228,7 @@ body {
     </div>
   </div>
 
-  <div id="nes">
+  <div id="dpad-area">
     <div id="dpad">
       <div class="dp" id="dp-c"></div>
       <div class="dp" id="dp-u"></div>
@@ -230,15 +240,15 @@ body {
       <div class="dpa" id="a-l"></div>
       <div class="dpa" id="a-r"></div>
     </div>
+  </div>
 
-    <div id="middle">
-      <div class="sys-row">
-        <button class="sys-btn" id="btn-select">SELECT</button>
-        <button class="sys-btn" id="btn-start">START</button>
-      </div>
-      <div class="stripe"></div>
-    </div>
+  <div id="mid">
+    <button class="sys-btn" id="btn-select">SELECT</button>
+    <div class="stripe"></div>
+    <button class="sys-btn" id="btn-start">START</button>
+  </div>
 
+  <div id="actions-area">
     <div id="actions">
       <button class="act-btn" id="btn-b">B</button>
       <button class="act-btn" id="btn-a">A</button>
@@ -246,7 +256,7 @@ body {
   </div>
 </div>
 
-<div id="version">v0.0.6</div>
+<div id="version">v0.0.7</div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
@@ -271,10 +281,10 @@ function send() {
     a: gp.a, b: gp.b, select: gp.select, start: gp.start });
 }
 
-// ── D-Pad Touch ──────────────────────────────────────────
-const dpad   = document.getElementById('dpad');
-const dpEls  = { up: document.getElementById('dp-u'), down: document.getElementById('dp-d'), left: document.getElementById('dp-l'), right: document.getElementById('dp-r') };
-const arEls  = { up: document.getElementById('a-u'),  down: document.getElementById('a-d'),  left: document.getElementById('a-l'),  right: document.getElementById('a-r') };
+// ── D-Pad ────────────────────────────────────────────────
+const dpad  = document.getElementById('dpad');
+const dpEls = { up: document.getElementById('dp-u'), down: document.getElementById('dp-d'), left: document.getElementById('dp-l'), right: document.getElementById('dp-r') };
+const arEls = { up: document.getElementById('a-u'),  down: document.getElementById('a-d'),  left: document.getElementById('a-l'),  right: document.getElementById('a-r') };
 
 const activeIds = new Map();
 
