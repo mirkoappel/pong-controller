@@ -8,7 +8,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   background: #0a0a0a;
-  min-height: 100dvh;
+  height: 100dvh;
   font-family: 'Courier New', monospace;
   color: #fff;
   overflow: hidden;
@@ -21,67 +21,129 @@ body::after {
   z-index: 100;
 }
 
-/* ── Home ──────────────────────────────────────────────── */
-#home {
-  min-height: 100dvh;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+/* ── Screen-System ─────────────────────────────────────── */
+.screen { display: none; height: 100dvh; }
+.screen.active { display: flex; }
+
+/* ── Setup-Screen ──────────────────────────────────────── */
+#setup {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 40px;
   padding: 40px;
+}
+
+#setup h1 {
+  font-size: clamp(1.4rem, 4vw, 2.5rem);
+  letter-spacing: 0.5rem;
+  text-shadow: 0 0 24px rgba(79,195,247,0.5), 0 0 4px rgba(79,195,247,0.8);
+}
+
+#qr-row {
+  display: flex;
+  gap: 60px;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.player-card {
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  gap: 16px;
 }
-#home.hidden { display: none; }
-
-#home-left {
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-}
-#code-display {
-  background: #111;
-  border: 2px solid #1e1e1e;
-  border-radius: 8px;
-  padding: 30px;
-  text-align: center;
-}
-#code-label {
-  color: #555;
+.player-card .label {
   font-size: 0.7rem;
   letter-spacing: 0.4rem;
-  margin-bottom: 12px;
+  color: #555;
 }
-#code-value {
-  color: #4fc3f7;
-  font-size: clamp(3rem, 8vw, 5rem);
-  letter-spacing: 0.6rem;
-  text-shadow: 0 0 24px rgba(79,195,247,0.5);
-}
-#qr-box {
+.qr-wrap {
   background: #fff;
-  padding: 16px;
-  border-radius: 8px;
-  align-self: center;
+  padding: 14px;
+  border-radius: 10px;
+  border: 3px solid #1e1e1e;
+  transition: border-color 0.3s;
 }
-#join-url {
-  color: #444;
+.qr-wrap.connected { border-color: #4caf50; }
+
+.status-dot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 0.7rem;
-  letter-spacing: 0.1rem;
-  text-align: center;
-  word-break: break-all;
+  letter-spacing: 0.15rem;
+  color: #444;
+}
+.status-dot::before {
+  content: '';
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #333;
+  flex-shrink: 0;
+}
+.status-dot.connected { color: #4caf50; }
+.status-dot.connected::before { background: #4caf50; box-shadow: 0 0 6px #4caf50; }
+
+#room-code {
+  font-size: 0.8rem;
+  letter-spacing: 0.25rem;
+  color: #333;
+}
+#room-code span {
+  color: #4fc3f7;
+  font-size: 1.2rem;
+  letter-spacing: 0.5rem;
+  text-shadow: 0 0 16px rgba(79,195,247,0.4);
 }
 
-#home-right {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-#home-right h2 {
+#start-btn {
+  background: #111;
+  border: 2px solid #333;
   color: #555;
-  font-size: 0.7rem;
-  letter-spacing: 0.4rem;
-  font-weight: normal;
-  margin-bottom: 6px;
+  font-family: inherit;
+  font-size: 1rem;
+  letter-spacing: 0.2rem;
+  padding: 18px 60px;
+  border-radius: 6px;
+  cursor: not-allowed;
+  transition: all 0.2s;
 }
+#start-btn.ready {
+  border-color: #4fc3f7;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(79,195,247,0.2);
+}
+#start-btn.ready:hover { background: #0e1a20; box-shadow: 0 0 30px rgba(79,195,247,0.35); }
+
+/* ── Hauptmenü ─────────────────────────────────────────── */
+#main-menu {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 40px;
+}
+
+.room-badge {
+  position: fixed;
+  top: 16px; right: 20px;
+  font-size: 0.65rem;
+  letter-spacing: 0.2rem;
+  color: #333;
+  z-index: 10;
+}
+.room-badge span { color: #4fc3f7; }
+
+.menu-section {
+  color: #444;
+  font-size: 0.65rem;
+  letter-spacing: 0.4rem;
+  align-self: flex-start;
+  margin-top: 10px;
+}
+.menu-section:first-child { margin-top: 0; }
 
 .menu-item {
   background: #111;
@@ -90,11 +152,15 @@ body::after {
   font-family: inherit;
   font-size: 1rem;
   letter-spacing: 0.15rem;
-  padding: 18px 24px;
+  padding: 18px 28px;
   border-radius: 6px;
   cursor: pointer;
   text-align: left;
+  width: min(90vw, 380px);
   transition: all 0.1s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 .menu-item.selected {
   border-color: #4fc3f7;
@@ -102,105 +168,111 @@ body::after {
   box-shadow: 0 0 16px rgba(79,195,247,0.3);
 }
 .menu-item .badge {
-  float: right;
   color: #555;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
 }
 
-#players {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
+/* ── Einstellungen ─────────────────────────────────────── */
+#settings {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  padding: 40px;
 }
-.player-slot {
-  flex: 1;
-  background: #111;
-  border: 2px solid #1e1e1e;
-  border-radius: 6px;
-  padding: 12px;
-  text-align: center;
-  font-size: 0.7rem;
-  letter-spacing: 0.15rem;
-  color: #444;
+#settings h2 {
+  font-size: 0.8rem;
+  letter-spacing: 0.4rem;
+  font-weight: normal;
+  color: #555;
 }
-.player-slot.connected { border-color: #4caf50; color: #4caf50; }
 
 /* ── Game-View ─────────────────────────────────────────── */
 #game-view {
-  display: none;
   position: fixed; inset: 0;
   background: #000;
 }
-#game-view.active { display: block; }
 #game-canvas {
   display: block;
   width: 100%;
   height: 100%;
 }
-
 #exit-hint {
   position: fixed; top: 12px; left: 12px;
-  color: #444;
-  font-size: 0.65rem;
+  color: #333;
+  font-size: 0.6rem;
   letter-spacing: 0.1rem;
   z-index: 5;
 }
 
 #footer {
-  position: fixed;
-  bottom: 14px; right: 14px;
-  color: #222;
-  font-size: 0.65rem;
-  letter-spacing: 0.1rem;
-  z-index: 101;
-}
-#status {
-  position: fixed;
-  bottom: 14px; left: 14px;
-  color: #444;
-  font-size: 0.65rem;
-  letter-spacing: 0.1rem;
-  z-index: 101;
+  position: fixed; bottom: 12px; right: 14px;
+  color: #222; font-size: 0.6rem; letter-spacing: 0.1rem;
+  z-index: 101; pointer-events: none;
 }
 </style>
 </head>
 <body>
 
-<div id="home">
-  <div id="home-left">
-    <div id="code-display">
-      <div id="code-label">RAUM-CODE</div>
-      <div id="code-value">– – – –</div>
+<!-- ── Setup-Screen ──────────────────────────────────── -->
+<div class="screen active" id="setup">
+  <h1>RETROCON</h1>
+  <div id="qr-row">
+    <div class="player-card">
+      <div class="label">SPIELER 1</div>
+      <div class="qr-wrap" id="qr-wrap-1"><div id="qr-1"></div></div>
+      <div class="status-dot" id="dot-1">WARTE…</div>
     </div>
-    <div id="qr-box"><div id="qr"></div></div>
-    <div id="join-url"></div>
-  </div>
-
-  <div id="home-right">
-    <h2>SPIELE</h2>
-    <button class="menu-item selected" data-action="game" data-game="pong">PONG <span class="badge">1–2 SPIELER</span></button>
-
-    <h2 style="margin-top: 20px;">SPIELER</h2>
-    <div id="players">
-      <div class="player-slot" id="slot-1">P1 OFFLINE</div>
-      <div class="player-slot" id="slot-2">P2 OFFLINE</div>
+    <div class="player-card">
+      <div class="label">SPIELER 2</div>
+      <div class="qr-wrap" id="qr-wrap-2"><div id="qr-2"></div></div>
+      <div class="status-dot" id="dot-2">OPTIONAL</div>
     </div>
   </div>
+  <div id="room-code">RAUM <span id="code-value">· · · ·</span></div>
+  <button id="start-btn" disabled>START</button>
 </div>
 
-<div id="game-view">
+<!-- ── Hauptmenü ─────────────────────────────────────── -->
+<div class="screen" id="main-menu">
+  <div class="room-badge">RAUM <span id="room-badge-code"></span></div>
+  <div class="menu-section">SPIELE</div>
+  <button class="menu-item selected" data-action="game" data-game="pong">PONG <span class="badge">1–2 SPIELER</span></button>
+  <div class="menu-section">OPTIONEN</div>
+  <button class="menu-item" data-action="settings">EINSTELLUNGEN <span class="badge">↗</span></button>
+</div>
+
+<!-- ── Einstellungen ─────────────────────────────────── -->
+<div class="screen" id="settings">
+  <div class="room-badge">RAUM <span id="settings-badge-code"></span></div>
+  <h2>SPIELER HINZUFÜGEN</h2>
+  <div id="qr-row-s">
+    <div class="player-card">
+      <div class="label">SPIELER 1</div>
+      <div class="qr-wrap" id="qr-wrap-s1"><div id="qr-s1"></div></div>
+      <div class="status-dot" id="dot-s1">WARTE…</div>
+    </div>
+    <div class="player-card">
+      <div class="label">SPIELER 2</div>
+      <div class="qr-wrap" id="qr-wrap-s2"><div id="qr-s2"></div></div>
+      <div class="status-dot" id="dot-s2">OPTIONAL</div>
+    </div>
+  </div>
+  <button class="menu-item" data-action="back" style="margin-top:10px">ZURÜCK <span class="badge">B</span></button>
+</div>
+
+<!-- ── Game-View ─────────────────────────────────────── -->
+<div id="game-view" style="display:none">
   <canvas id="game-canvas"></canvas>
-  <div id="exit-hint">SELECT = ZURÜCK</div>
+  <div id="exit-hint">SELECT = MENÜ</div>
 </div>
 
-<div id="status">VERBINDE…</div>
-<div id="footer">v0.2.0</div>
+<div id="footer">v0.3.0</div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="games/pong.js"></script>
 <script>
-// ── Code-Generierung ────────────────────────────────────
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 function genCode() {
   let s = '';
@@ -210,105 +282,143 @@ function genCode() {
 
 let code = '';
 let peer = null;
-const conns = new Map(); // player -> conn
-const lastInput = new Map(); // player -> gamepad state
-const prevInput = new Map(); // player -> previous gamepad (for edge detection)
+const conns = new Map();
+const lastInput = new Map();
+const prevInput = new Map();
 
-const statusEl = document.getElementById('status');
-const codeValueEl = document.getElementById('code-value');
-const joinUrlEl = document.getElementById('join-url');
+// ── Screens ──────────────────────────────────────────────
+const screens = { setup: 'setup', menu: 'main-menu', settings: 'settings' };
+let activeScreen = 'setup';
 
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(name);
+  if (el) el.classList.add('active');
+  activeScreen = name;
+}
+
+// ── PeerJS-Setup ─────────────────────────────────────────
 function setupPeer(attempt = 0) {
   code = genCode();
-  const peerId = 'console-' + code;
-  peer = new Peer(peerId);
+  peer = new Peer('console-' + code);
 
   peer.on('open', () => {
-    codeValueEl.textContent = code.split('').join(' ');
-    const baseUrl = location.href.replace(/console\.html.*$/, '');
-    const joinUrl = `${baseUrl}controller.html?code=${code}&player=1`;
-    joinUrlEl.textContent = joinUrl.replace(/^https?:\/\//, '');
-    new QRCode(document.getElementById('qr'), { text: joinUrl, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
-    statusEl.textContent = 'RAUM ' + code + ' · BEREIT';
+    const base = location.href.replace(/console\.html.*$/, '');
+    const url1 = `${base}controller.html?code=${code}&player=1`;
+    const url2 = `${base}controller.html?code=${code}&player=2`;
+
+    document.getElementById('code-value').textContent = code.split('').join(' ');
+    document.getElementById('room-badge-code').textContent = code;
+    document.getElementById('settings-badge-code').textContent = code;
+
+    const qrOpts = { width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M };
+    new QRCode(document.getElementById('qr-1'),  { ...qrOpts, text: url1 });
+    new QRCode(document.getElementById('qr-2'),  { ...qrOpts, text: url2 });
+    new QRCode(document.getElementById('qr-s1'), { ...qrOpts, text: url1 });
+    new QRCode(document.getElementById('qr-s2'), { ...qrOpts, text: url2 });
   });
 
   peer.on('error', err => {
-    if (err.type === 'unavailable-id' && attempt < 5) {
-      peer.destroy();
-      setupPeer(attempt + 1);
-    } else {
-      statusEl.textContent = 'FEHLER: ' + err.type;
-    }
+    if (err.type === 'unavailable-id' && attempt < 5) { peer.destroy(); setupPeer(attempt + 1); }
   });
 
   peer.on('connection', conn => {
     const player = conn.metadata?.player || 1;
-    if (conns.has(player)) {
-      try { conns.get(player).close(); } catch {}
-    }
+    if (conns.has(player)) { try { conns.get(player).close(); } catch {} }
     conns.set(player, conn);
 
-    conn.on('open', () => updatePlayerSlot(player, true));
-    conn.on('data', data => {
-      if (data?.type === 'gamepad') {
-        prevInput.set(player, lastInput.get(player) || null);
-        lastInput.set(player, data);
-        if (currentGame?.input) currentGame.input(player, data, prevInput.get(player));
-        else handleHomeInput(player, data, prevInput.get(player));
-      }
-    });
+    conn.on('open',  () => setPlayerConnected(player, true));
     conn.on('close', () => {
       if (conns.get(player) === conn) {
-        conns.delete(player);
-        lastInput.delete(player);
-        updatePlayerSlot(player, false);
-        if (currentGame?.onDisconnect) currentGame.onDisconnect(player);
+        conns.delete(player); lastInput.delete(player);
+        setPlayerConnected(player, false);
+        currentGame?.onDisconnect?.(player);
       }
+    });
+    conn.on('data', data => {
+      if (data?.type !== 'gamepad') return;
+      prevInput.set(player, lastInput.get(player) ?? null);
+      lastInput.set(player, data);
+      if (currentGame) currentGame.input?.(player, data, prevInput.get(player));
+      else handleMenuInput(player, data, prevInput.get(player));
     });
   });
 }
 
-function updatePlayerSlot(player, connected) {
-  const el = document.getElementById('slot-' + player);
-  if (!el) return;
-  el.classList.toggle('connected', connected);
-  el.textContent = `P${player} ` + (connected ? 'ONLINE' : 'OFFLINE');
+function setPlayerConnected(player, on) {
+  ['', 's'].forEach(prefix => {
+    const wrap = document.getElementById(`qr-wrap-${prefix}${player}`);
+    const dot  = document.getElementById(`dot-${prefix}${player}`);
+    if (wrap) wrap.classList.toggle('connected', on);
+    if (dot) { dot.classList.toggle('connected', on); dot.textContent = on ? 'VERBUNDEN' : (player === 2 ? 'OPTIONAL' : 'WARTE…'); }
+  });
+  // START freischalten wenn P1 verbunden
+  const startBtn = document.getElementById('start-btn');
+  if (conns.size > 0) {
+    startBtn.disabled = false;
+    startBtn.classList.add('ready');
+  } else {
+    startBtn.disabled = true;
+    startBtn.classList.remove('ready');
+  }
 }
 
 setupPeer();
 
-// ── Home-Menü-Navigation per Controller ────────────────
-const home = document.getElementById('home');
-const gameView = document.getElementById('game-view');
-const menuItems = () => [...document.querySelectorAll('.menu-item')];
+// ── START-Button ─────────────────────────────────────────
+document.getElementById('start-btn').addEventListener('click', () => {
+  if (conns.size > 0) showScreen('main-menu');
+});
+
+// ── Menü-Navigation ──────────────────────────────────────
+const menuItems = () => [...document.querySelectorAll('#main-menu .menu-item, #settings .menu-item')].filter(el => {
+  return document.getElementById('main-menu').classList.contains('active')
+    ? el.closest('#main-menu')
+    : el.closest('#settings');
+});
 let menuIdx = 0;
 
 function highlightMenu() {
-  menuItems().forEach((el, i) => el.classList.toggle('selected', i === menuIdx));
-}
-
-function handleHomeInput(player, gp, prev) {
-  if (player !== 1) return; // Nur P1 navigiert das Menü
   const items = menuItems();
-  const downEdge = gp.dpad.down && !(prev?.dpad?.down);
-  const upEdge   = gp.dpad.up   && !(prev?.dpad?.up);
-  const aEdge    = gp.a && !(prev?.a);
-  if (downEdge) { menuIdx = (menuIdx + 1) % items.length; highlightMenu(); }
-  if (upEdge)   { menuIdx = (menuIdx - 1 + items.length) % items.length; highlightMenu(); }
-  if (aEdge)    activateMenu(items[menuIdx]);
+  items.forEach((el, i) => el.classList.toggle('selected', i === menuIdx));
 }
 
-menuItems().forEach((el, i) => el.addEventListener('click', () => { menuIdx = i; highlightMenu(); activateMenu(el); }));
-
-function activateMenu(el) {
-  if (el.dataset.action === 'game') startGame(el.dataset.game);
+function handleMenuInput(player, gp, prev) {
+  if (player !== 1) return;
+  const items = menuItems();
+  if (!items.length) {
+    // Setup-Screen: START per Controller
+    if (activeScreen === 'setup' && gp.start && !prev?.start && conns.size > 0) showScreen('main-menu');
+    return;
+  }
+  if (gp.dpad.down && !prev?.dpad?.down) { menuIdx = (menuIdx + 1) % items.length; highlightMenu(); }
+  if (gp.dpad.up   && !prev?.dpad?.up)   { menuIdx = (menuIdx - 1 + items.length) % items.length; highlightMenu(); }
+  if (gp.a && !prev?.a) activateItem(items[menuIdx]);
+  if (gp.b && !prev?.b && activeScreen === 'settings') { showScreen('main-menu'); menuIdx = 0; highlightMenu(); }
 }
 
-// ── Game-Loader ────────────────────────────────────────
-let currentGame = null;
-let rafId = null;
+document.querySelectorAll('.menu-item').forEach((el, i) => {
+  el.addEventListener('click', () => {
+    menuIdx = [...el.parentElement.querySelectorAll('.menu-item')].indexOf(el);
+    activateItem(el);
+  });
+});
+
+function activateItem(el) {
+  if (!el) return;
+  const action = el.dataset.action;
+  if (action === 'game')     { menuIdx = 0; startGame(el.dataset.game); }
+  if (action === 'settings') { menuIdx = 0; showScreen('settings'); highlightMenu(); }
+  if (action === 'back')     { menuIdx = 1; showScreen('main-menu'); highlightMenu(); }
+}
+
+highlightMenu();
+
+// ── Game-Loader ──────────────────────────────────────────
+let currentGame = null, rafId = null;
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
+const gameView = document.getElementById('game-view');
 
 function resizeCanvas() {
   canvas.width  = canvas.clientWidth  * devicePixelRatio;
@@ -318,38 +428,33 @@ window.addEventListener('resize', () => { resizeCanvas(); currentGame?.resize?.(
 
 function startGame(name) {
   const mod = window.RetroGames?.[name];
-  if (!mod) { alert('Spiel nicht gefunden: ' + name); return; }
-  home.classList.add('hidden');
-  gameView.classList.add('active');
+  if (!mod) return;
+  gameView.style.display = 'block';
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   resizeCanvas();
-  const numPlayers = Math.max(1, conns.size);
-  currentGame = mod.create(ctx, canvas.width, canvas.height, numPlayers, {
+  currentGame = mod.create(ctx, canvas.width, canvas.height, Math.max(1, conns.size), {
     exit: exitGame,
     getConns: () => conns,
     code
   });
-  // Anfangs-Input weitergeben
-  for (const [player, gp] of lastInput) currentGame.input?.(player, gp, null);
+  for (const [p, gp] of lastInput) currentGame.input?.(p, gp, null);
   let last = performance.now();
-  function loop(now) {
-    const dt = Math.min(50, now - last) / 1000;
-    last = now;
+  (function loop(now) {
+    const dt = Math.min(50, now - last) / 1000; last = now;
     currentGame.update?.(dt);
     currentGame.draw?.();
     rafId = requestAnimationFrame(loop);
-  }
-  rafId = requestAnimationFrame(loop);
+  })(performance.now());
 }
 
 function exitGame() {
   cancelAnimationFrame(rafId);
   currentGame?.destroy?.();
   currentGame = null;
-  gameView.classList.remove('active');
-  home.classList.remove('hidden');
+  gameView.style.display = 'none';
+  showScreen('main-menu');
+  menuIdx = 0; highlightMenu();
 }
-
-highlightMenu();
 </script>
 </body>
 </html>
