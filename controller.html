@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Controller</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --color: #4fc3f7; }
+  body {
+    background: #0a0a0a;
+    height: 100dvh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    align-items: center;
+    font-family: 'Courier New', monospace;
+    color: #fff;
+    user-select: none;
+    overflow: hidden;
+    padding: 28px 0 24px;
+  }
+  #top { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  #player-label { font-size: 0.75rem; letter-spacing: 0.3rem; color: #444; }
+  #player-num   { font-size: 4rem; font-weight: bold; line-height: 1; color: var(--color); }
+  #status {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.8rem; letter-spacing: 0.08rem;
+    padding: 6px 16px; border-radius: 20px;
+    background: #111; color: #444;
+    transition: color 0.3s, background 0.3s;
+    margin-top: 4px;
+  }
+  #status.connected { color: #4caf50; background: #0d200d; }
+  #status.error     { color: #f44336; background: #200d0d; }
+  #status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  #status.connected #status-dot { animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  #track-wrap {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px; height: 100%;
+  }
+  #track {
+    width: 56px; height: min(55vh, 340px);
+    background: #111; border: 2px solid #222;
+    border-radius: 30px; position: relative; overflow: hidden;
+  }
+  #track::after {
+    content: ''; position: absolute;
+    left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: 60%; height: 2px; background: #1e1e1e; border-radius: 1px;
+  }
+  #paddle {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    width: 28px; height: 60px;
+    background: var(--color); border-radius: 6px;
+    transition: top 0.04s linear;
+    box-shadow: 0 0 18px var(--color);
+  }
+  #angle-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  #angle { font-size: 2.2rem; font-weight: bold; color: var(--color); min-width: 5ch; text-align: center; }
+  #angle-label { font-size: 0.65rem; color: #333; letter-spacing: 0.1rem; }
+
+  #bottom { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  #signal-bars { display: flex; align-items: flex-end; gap: 4px; height: 20px; }
+  .bar { width: 6px; border-radius: 2px; background: #222; transition: background 0.15s; }
+  .bar:nth-child(1){height:6px} .bar:nth-child(2){height:11px}
+  .bar:nth-child(3){height:16px} .bar:nth-child(4){height:20px}
+  .bar.active { background: var(--color); }
+  #send-label { font-size: 0.65rem; color: #2a2a2a; letter-spacing: 0.1rem; }
+  #send-label.sending { color: #333; }
+
+  #btn-permission {
+    display: none; background: var(--color); color: #000;
+    border: none; padding: 16px 40px; font-size: 1rem;
+    font-family: 'Courier New', monospace; letter-spacing: 0.1rem;
+    border-radius: 50px; cursor: pointer; margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+
+<div id="top">
+  <div id="player-label">SPIELER</div>
+  <div id="player-num">?</div>
+  <div id="status">
+    <div id="status-dot"></div>
+    <span id="status-text">Verbinde...</span>
+  </div>
+  <button id="btn-permission">Bewegung erlauben</button>
+</div>
+
+<div id="track-wrap">
+  <div id="track"><div id="paddle"></div></div>
+  <div id="angle-wrap">
+    <div id="angle">0°</div>
+    <div id="angle-label">NEIGUNG</div>
+  </div>
+</div>
+
+<div id="bottom">
+  <div id="signal-bars">
+    <div class="bar" id="b1"></div><div class="bar" id="b2"></div>
+    <div class="bar" id="b3"></div><div class="bar" id="b4"></div>
+  </div>
+  <div id="send-label">SIGNAL</div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const player  = parseInt(params.get('player')) || 1;
+const gamePeerId = params.get('peer');
+
+const color = player === 1 ? '#4fc3f7' : '#ef9a9a';
+document.documentElement.style.setProperty('--color', color);
+document.getElementById('player-num').textContent = player;
+
+const statusEl   = document.getElementById('status');
+const statusText = document.getElementById('status-text');
+const paddleEl   = document.getElementById('paddle');
+const angleEl    = document.getElementById('angle');
+const sendLabel  = document.getElementById('send-label');
+const bars       = [1,2,3,4].map(i => document.getElementById(`b${i}`));
+const track      = document.getElementById('track');
+
+let gamma = 0;
+let conn  = null;
+
+function tiltToPercent(g) {
+  return (Math.max(-45, Math.min(45, g)) + 45) / 90;
+}
+
+function updatePaddlePreview(g) {
+  const pct  = tiltToPercent(g);
+  const topPx = pct * (track.clientHeight - paddleEl.clientHeight);
+  paddleEl.style.top = `${topPx}px`;
+  const deg = Math.round(g);
+  angleEl.textContent = `${deg > 0 ? '+' : ''}${deg}°`;
+}
+
+function flashSignal() {
+  const level = Math.min(4, Math.floor(Math.abs(gamma) / 12) + 1);
+  bars.forEach((b, i) => b.classList.toggle('active', i < level));
+  sendLabel.classList.add('sending');
+  clearTimeout(flashSignal._t);
+  flashSignal._t = setTimeout(() => {
+    bars.forEach(b => b.classList.remove('active'));
+    sendLabel.classList.remove('sending');
+  }, 120);
+}
+
+function connect() {
+  if (!gamePeerId) {
+    statusText.textContent = 'Kein Spiel gefunden – QR neu scannen';
+    statusEl.className = 'error';
+    return;
+  }
+  const peer = new Peer();
+  peer.on('open', () => {
+    conn = peer.connect(gamePeerId, { metadata: { player } });
+    conn.on('open', () => {
+      statusText.textContent = 'Verbunden ✓';
+      statusEl.className = 'connected';
+    });
+    conn.on('close', () => {
+      statusText.textContent = 'Getrennt – lade neu...';
+      statusEl.className = 'error';
+      setTimeout(() => location.reload(), 2000);
+    });
+  });
+  peer.on('error', () => {
+    statusText.textContent = 'Verbindungsfehler';
+    statusEl.className = 'error';
+    setTimeout(() => location.reload(), 3000);
+  });
+}
+
+connect();
+
+setInterval(() => {
+  if (conn && conn.open) {
+    conn.send({ type: 'tilt', player, gamma });
+    flashSignal();
+  }
+}, 33);
+
+function handleOrientation(e) {
+  gamma = e.gamma ?? 0;
+  updatePaddlePreview(gamma);
+}
+
+if (typeof DeviceOrientationEvent !== 'undefined' &&
+    typeof DeviceOrientationEvent.requestPermission === 'function') {
+  const btn = document.getElementById('btn-permission');
+  btn.style.display = 'block';
+  btn.onclick = () => {
+    DeviceOrientationEvent.requestPermission().then(s => {
+      if (s === 'granted') {
+        window.addEventListener('deviceorientation', handleOrientation);
+        btn.style.display = 'none';
+      }
+    });
+  };
+} else {
+  window.addEventListener('deviceorientation', handleOrientation);
+}
+</script>
+</body>
+</html>

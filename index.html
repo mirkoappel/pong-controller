@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pong</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    font-family: 'Courier New', monospace;
+    color: #fff;
+    overflow: hidden;
+  }
+  canvas { display: block; }
+  .screen {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+  }
+  .screen h1 { font-size: 3rem; letter-spacing: 0.5rem; }
+  .screen p  { color: #666; font-size: 0.9rem; }
+  .mode-buttons { display: flex; gap: 24px; }
+  .mode-btn {
+    background: #111;
+    border: 2px solid #333;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    letter-spacing: 0.1rem;
+    padding: 20px 48px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .mode-btn:hover { border-color: #fff; background: #1a1a1a; }
+  .mode-btn .sub { display: block; font-size: 0.7rem; color: #555; margin-top: 6px; }
+  .qr-section { display: flex; gap: 60px; align-items: flex-start; }
+  .qr-box { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .qr-box .label { font-size: 0.8rem; letter-spacing: 0.15rem; color: #888; }
+  .qr-wrap { background: #fff; padding: 10px; border-radius: 8px; }
+  .pill {
+    font-size: 0.75rem;
+    padding: 5px 14px;
+    border-radius: 20px;
+    background: #1a1a1a;
+    color: #555;
+    transition: all 0.3s;
+  }
+  .pill.connected { background: #0d2b0d; color: #4caf50; }
+  #btn-start {
+    display: none;
+    background: #fff;
+    color: #000;
+    border: none;
+    font-family: 'Courier New', monospace;
+    font-size: 1rem;
+    letter-spacing: 0.15rem;
+    padding: 14px 40px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #peer-status { font-size: 0.75rem; color: #333; }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div class="screen" id="screen-mode">
+  <h1>PONG</h1>
+  <div class="mode-buttons">
+    <button class="mode-btn" onclick="selectMode(1)">
+      1 SPIELER
+      <span class="sub">gegen KI</span>
+    </button>
+    <button class="mode-btn" onclick="selectMode(2)">
+      2 SPIELER
+      <span class="sub">beide per Handy</span>
+    </button>
+  </div>
+</div>
+
+<div class="screen" id="screen-connect" style="display:none">
+  <h1>PONG</h1>
+  <p id="connect-msg">Scanne deinen QR-Code mit dem Handy</p>
+  <div class="qr-section" id="qr-section">
+    <div class="qr-box" id="box1">
+      <div class="label">SPIELER 1</div>
+      <div class="qr-wrap" id="qr1"></div>
+      <div class="pill" id="status1">Warten...</div>
+    </div>
+    <div class="qr-box" id="box2">
+      <div class="label">SPIELER 2</div>
+      <div class="qr-wrap" id="qr2"></div>
+      <div class="pill" id="status2">Warten...</div>
+    </div>
+  </div>
+  <button id="btn-start" onclick="launchGame()">SPIELEN →</button>
+  <div id="peer-status">Verbinde mit Netzwerk...</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+const W = 900, H = 550;
+canvas.width = W; canvas.height = H;
+
+const PADDLE_W = 12, PADDLE_H = 90, BALL_R = 8;
+const TILT_SCALE = 0.18, AI_SPEED = 4.2;
+
+let mode = 0;
+let peer, connections = {};
+let peerId = null;
+
+let state = {
+  p1: { y: H/2 - PADDLE_H/2, score: 0, tilt: 0 },
+  p2: { y: H/2 - PADDLE_H/2, score: 0, tilt: 0 },
+  ball: { x: W/2, y: H/2, vx: 5, vy: 3 },
+  running: false,
+  countdown: 0,
+};
+
+const connected = { 1: false, 2: false };
+
+// ── PeerJS setup ──────────────────────────────────────────────
+function initPeer() {
+  peer = new Peer();
+  peer.on('open', id => {
+    peerId = id;
+    document.getElementById('peer-status').textContent = 'Bereit';
+    buildQRCodes();
+  });
+  peer.on('connection', conn => {
+    const player = parseInt(conn.metadata?.player || 1);
+    connections[player] = conn;
+    conn.on('open', () => {
+      connected[player] = true;
+      setStatus(player, 'Verbunden ✓', true);
+      checkReady();
+    });
+    conn.on('data', msg => {
+      if (msg.type === 'tilt') state[`p${msg.player}`].tilt = msg.gamma;
+    });
+    conn.on('close', () => {
+      connected[player] = false;
+      setStatus(player, 'Getrennt', false);
+      if (state.running) pauseGame();
+    });
+  });
+  peer.on('error', () => {
+    document.getElementById('peer-status').textContent = 'Netzwerkfehler – lade neu';
+  });
+}
+
+function controllerURL(player) {
+  const base = location.href.replace('index.html', '').replace(/\/$/, '');
+  return `${base}/controller.html?peer=${peerId}&player=${player}`;
+}
+
+function buildQRCodes() {
+  if (!peerId) return;
+  document.getElementById('qr1').innerHTML = '';
+  document.getElementById('qr2').innerHTML = '';
+  new QRCode(document.getElementById('qr1'), {
+    text: controllerURL(1), width: 160, height: 160, colorDark: '#000', colorLight: '#fff'
+  });
+  if (mode === 2) {
+    new QRCode(document.getElementById('qr2'), {
+      text: controllerURL(2), width: 160, height: 160, colorDark: '#000', colorLight: '#fff'
+    });
+  }
+}
+
+// ── Mode selection ────────────────────────────────────────────
+function selectMode(m) {
+  mode = m;
+  document.getElementById('screen-mode').style.display = 'none';
+  document.getElementById('screen-connect').style.display = 'flex';
+  if (mode === 1) {
+    document.getElementById('box2').style.display = 'none';
+    document.getElementById('connect-msg').textContent = 'Scanne den QR-Code mit deinem Handy';
+  }
+  initPeer();
+}
+
+function setStatus(player, text, ok) {
+  const el = document.getElementById(`status${player}`);
+  el.textContent = text;
+  el.classList.toggle('connected', ok);
+}
+
+function checkReady() {
+  if (mode === 2 && connected[1] && connected[2]) startCountdown();
+  if (mode === 1 && connected[1]) {
+    document.getElementById('btn-start').style.display = 'inline-block';
+  }
+}
+
+function launchGame() { startCountdown(); }
+
+function startCountdown() {
+  document.getElementById('btn-start').style.display = 'none';
+  state.countdown = 3;
+  const iv = setInterval(() => {
+    state.countdown--;
+    if (state.countdown <= 0) {
+      clearInterval(iv);
+      document.getElementById('screen-connect').style.display = 'none';
+      resetBall();
+      state.running = true;
+    }
+  }, 1000);
+}
+
+function pauseGame() {
+  state.running = false;
+  document.getElementById('screen-connect').style.display = 'flex';
+  buildQRCodes();
+}
+
+// ── Game logic ────────────────────────────────────────────────
+function resetBall() {
+  state.ball.x = W / 2; state.ball.y = H / 2;
+  const dir = Math.random() > 0.5 ? 1 : -1;
+  state.ball.vx = 5 * dir;
+  state.ball.vy = (Math.random() * 4 + 2) * (Math.random() > 0.5 ? 1 : -1);
+}
+
+function update() {
+  if (!state.running) return;
+
+  state.p1.y += state.p1.tilt * TILT_SCALE;
+  if (mode === 1) {
+    const diff = (state.ball.y - PADDLE_H / 2) - state.p2.y;
+    state.p2.y += Math.sign(diff) * Math.min(Math.abs(diff), AI_SPEED);
+  } else {
+    state.p2.y += state.p2.tilt * TILT_SCALE;
+  }
+  state.p1.y = Math.max(0, Math.min(H - PADDLE_H, state.p1.y));
+  state.p2.y = Math.max(0, Math.min(H - PADDLE_H, state.p2.y));
+
+  state.ball.x += state.ball.vx;
+  state.ball.y += state.ball.vy;
+
+  if (state.ball.y - BALL_R <= 0)   { state.ball.y = BALL_R;     state.ball.vy *= -1; }
+  if (state.ball.y + BALL_R >= H)   { state.ball.y = H - BALL_R; state.ball.vy *= -1; }
+
+  const p1x = 30 + PADDLE_W;
+  if (state.ball.vx < 0 && state.ball.x - BALL_R <= p1x && state.ball.x - BALL_R >= 28 &&
+      state.ball.y + BALL_R >= state.p1.y && state.ball.y - BALL_R <= state.p1.y + PADDLE_H) {
+    state.ball.x = p1x + BALL_R;
+    state.ball.vx = Math.abs(state.ball.vx) * 1.04;
+    state.ball.vy = ((state.ball.y - (state.p1.y + PADDLE_H/2)) / (PADDLE_H/2)) * 7;
+  }
+  const p2x = W - 30 - PADDLE_W;
+  if (state.ball.vx > 0 && state.ball.x + BALL_R >= p2x && state.ball.x + BALL_R <= W - 28 &&
+      state.ball.y + BALL_R >= state.p2.y && state.ball.y - BALL_R <= state.p2.y + PADDLE_H) {
+    state.ball.x = p2x - BALL_R;
+    state.ball.vx = -Math.abs(state.ball.vx) * 1.04;
+    state.ball.vy = ((state.ball.y - (state.p2.y + PADDLE_H/2)) / (PADDLE_H/2)) * 7;
+  }
+
+  const spd = Math.hypot(state.ball.vx, state.ball.vy);
+  if (spd > 18) { state.ball.vx = state.ball.vx / spd * 18; state.ball.vy = state.ball.vy / spd * 18; }
+
+  if (state.ball.x < 0)  { state.p2.score++; resetBall(); }
+  if (state.ball.x > W)  { state.p1.score++; resetBall(); }
+}
+
+function draw() {
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.setLineDash([10, 15]);
+  ctx.strokeStyle = '#1e1e1e'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = '#222'; ctx.font = 'bold 80px Courier New'; ctx.textAlign = 'center';
+  ctx.fillText(state.p1.score, W/2 - 120, 90);
+  ctx.fillText(state.p2.score, W/2 + 120, 90);
+
+  ctx.font = '13px Courier New'; ctx.fillStyle = '#333';
+  ctx.fillText('SPIELER 1', W/2 - 120, 110);
+  ctx.fillText(mode === 1 ? 'KI' : 'SPIELER 2', W/2 + 120, 110);
+
+  ctx.shadowBlur = 12; ctx.shadowColor = '#fff'; ctx.fillStyle = '#fff';
+  ctx.fillRect(30, state.p1.y, PADDLE_W, PADDLE_H);
+  ctx.fillRect(W - 30 - PADDLE_W, state.p2.y, PADDLE_W, PADDLE_H);
+
+  ctx.shadowBlur = 20;
+  ctx.beginPath(); ctx.arc(state.ball.x, state.ball.y, BALL_R, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  if (state.countdown > 0) {
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.font = 'bold 160px Courier New'; ctx.textAlign = 'center';
+    ctx.fillText(state.countdown, W/2, H/2 + 55);
+  }
+}
+
+function loop() { update(); draw(); requestAnimationFrame(loop); }
+loop();
+</script>
+</body>
+</html>
