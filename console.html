@@ -377,19 +377,11 @@ function highlightMenu() {
   items.forEach((el, i) => el.classList.toggle('selected', i === menuIdx));
 }
 
-let menuPlayer = null; // wer gerade das Menü steuert
-
 function handleMenuInput(player, gp, prev) {
-  // Setup-Screen: jeder kann A drücken
   if (activeScreen === 'setup') {
-    if (gp.a && !prev?.a) { menuPlayer = player; showScreen('main-menu'); menuIdx = 0; highlightMenu(); }
+    if (gp.a && !prev?.a) { showScreen('main-menu'); menuIdx = 0; highlightMenu(); }
     return;
   }
-  // Wer eine Taste drückt übernimmt die Steuerung
-  const anyPress = (gp.dpad.up || gp.dpad.down || gp.a || gp.b) &&
-                   !(prev?.dpad?.up || prev?.dpad?.down || prev?.a || prev?.b);
-  if (anyPress) menuPlayer = player;
-  if (player !== menuPlayer) return;
   const items = menuItems();
   if (gp.dpad.down && !prev?.dpad?.down) { menuIdx = (menuIdx + 1) % items.length; highlightMenu(); }
   if (gp.dpad.up   && !prev?.dpad?.up)   { menuIdx = (menuIdx - 1 + items.length) % items.length; highlightMenu(); }
