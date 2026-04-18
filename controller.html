@@ -200,8 +200,15 @@ setInterval(() => {
   }
 }, 33);
 
+function getEffectiveTilt(e) {
+  const angle = screen.orientation?.angle ?? window.orientation ?? 0;
+  if (angle === 90)              return -(e.beta ?? 0);
+  if (angle === 270 || angle === -90) return  (e.beta ?? 0);
+  return e.gamma ?? 0;
+}
+
 function handleOrientation(e) {
-  gamma = e.gamma ?? 0;
+  gamma = getEffectiveTilt(e);
   updatePaddlePreview(gamma);
 }
 

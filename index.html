@@ -118,7 +118,12 @@ const W = 900, H = 550;
 canvas.width = W; canvas.height = H;
 
 const PADDLE_W = 12, PADDLE_H = 90, BALL_R = 8;
-const TILT_SCALE = 0.18, AI_SPEED = 4.2;
+const TILT_RANGE = 45, AI_SPEED = 4.2;
+
+function tiltToY(gamma) {
+  const pct = (Math.max(-TILT_RANGE, Math.min(TILT_RANGE, gamma)) + TILT_RANGE) / (TILT_RANGE * 2);
+  return pct * (H - PADDLE_H);
+}
 
 let mode = 0;
 let peer, connections = {};
@@ -241,15 +246,14 @@ function resetBall() {
 function update() {
   if (!state.running) return;
 
-  state.p1.y += state.p1.tilt * TILT_SCALE;
+  state.p1.y = tiltToY(state.p1.tilt);
   if (mode === 1) {
     const diff = (state.ball.y - PADDLE_H / 2) - state.p2.y;
     state.p2.y += Math.sign(diff) * Math.min(Math.abs(diff), AI_SPEED);
+    state.p2.y = Math.max(0, Math.min(H - PADDLE_H, state.p2.y));
   } else {
-    state.p2.y += state.p2.tilt * TILT_SCALE;
+    state.p2.y = tiltToY(state.p2.tilt);
   }
-  state.p1.y = Math.max(0, Math.min(H - PADDLE_H, state.p1.y));
-  state.p2.y = Math.max(0, Math.min(H - PADDLE_H, state.p2.y));
 
   state.ball.x += state.ball.vx;
   state.ball.y += state.ball.vy;
