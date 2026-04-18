@@ -378,12 +378,13 @@ function highlightMenu() {
 }
 
 function handleMenuInput(player, gp, prev) {
-  if (player !== 1) return;
-  // Setup-Screen: START per Controller
+  // Setup-Screen: jeder Spieler kann A drücken zum Starten
   if (activeScreen === 'setup') {
-    if ((gp.a && !prev?.a) && conns.size > 0) { showScreen('main-menu'); menuIdx = 0; highlightMenu(); }
+    if (gp.a && !prev?.a) { showScreen('main-menu'); menuIdx = 0; highlightMenu(); }
     return;
   }
+  // Im Menü nur P1
+  if (player !== 1) return;
   const items = menuItems();
   if (gp.dpad.down && !prev?.dpad?.down) { menuIdx = (menuIdx + 1) % items.length; highlightMenu(); }
   if (gp.dpad.up   && !prev?.dpad?.up)   { menuIdx = (menuIdx - 1 + items.length) % items.length; highlightMenu(); }
