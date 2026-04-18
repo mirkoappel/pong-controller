@@ -169,7 +169,7 @@ body::after {
 <div id="home">
   <div id="home-left">
     <div id="code-display">
-      <div id="code-label">CONSOLE-CODE</div>
+      <div id="code-label">RAUM-CODE</div>
       <div id="code-value">– – – –</div>
     </div>
     <div id="qr-box"><div id="qr"></div></div>
@@ -229,7 +229,7 @@ function setupPeer(attempt = 0) {
     const joinUrl = `${baseUrl}controller.html?code=${code}&player=1`;
     joinUrlEl.textContent = joinUrl.replace(/^https?:\/\//, '');
     new QRCode(document.getElementById('qr'), { text: joinUrl, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
-    statusEl.textContent = 'BEREIT · CODE ' + code;
+    statusEl.textContent = 'RAUM ' + code + ' · BEREIT';
   });
 
   peer.on('error', err => {

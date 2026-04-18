@@ -201,6 +201,7 @@ body {
   font-size: 0.7rem; letter-spacing: 0.1rem;
   color: rgba(255,255,255,0.5);
 }
+
 #scan-close {
   position: absolute; top: 16px; right: 16px; z-index: 3;
   background: rgba(0,0,0,0.6);
@@ -306,12 +307,12 @@ body {
   <video id="scan-video" playsinline muted></video>
   <canvas id="scan-canvas"></canvas>
   <div id="scan-frame"></div>
-  <div id="scan-hint">QR-Code auf Spielfeld richten</div>
+  <div id="scan-hint">QR-Code des Raums scannen</div>
   <button id="scan-close">SCHLIESSEN</button>
 </div>
 
 <div id="code-screen">
-  <h2>CONSOLE-CODE</h2>
+  <h2>RAUM-CODE</h2>
   <input id="code-input" maxlength="4" placeholder="• • • •" autocapitalize="characters" autocomplete="off">
   <div id="code-error"></div>
   <button id="code-submit">VERBINDEN</button>

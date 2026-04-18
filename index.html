@@ -128,21 +128,21 @@ h1 {
 <div class="subtitle">RETRO GAMES · HANDY ALS CONTROLLER</div>
 
 <div class="menu" id="main-menu">
-  <button class="menu-btn" onclick="newConsole()">NEUE CONSOLE</button>
-  <button class="menu-btn" onclick="showJoin()">CONSOLE BEITRETEN</button>
+  <button class="menu-btn" onclick="newRoom()">NEUEN RAUM ERSTELLEN</button>
+  <button class="menu-btn" onclick="showJoin()">RAUM BEITRETEN</button>
 </div>
 
 <div class="menu hidden" id="join-menu">
   <input class="code-input" id="join-code" maxlength="4" placeholder="• • • •" autocapitalize="characters" autocomplete="off">
   <div id="error-msg"></div>
-  <button class="menu-btn" onclick="joinConsole()">VERBINDEN</button>
+  <button class="menu-btn" onclick="joinRoom()">VERBINDEN</button>
   <button class="menu-btn secondary" onclick="showMain()">ZURÜCK</button>
 </div>
 
 <div id="footer">v0.2.0</div>
 
 <script>
-function newConsole() {
+function newRoom() {
   location.href = 'console.html';
 }
 
@@ -157,14 +157,13 @@ function showMain() {
   document.getElementById('error-msg').textContent = '';
 }
 
-function joinConsole() {
+function joinRoom() {
   const code = document.getElementById('join-code').value.trim().toUpperCase();
   if (code.length !== 4) {
-    document.getElementById('error-msg').textContent = '4-STELLIGEN CODE EINGEBEN';
+    document.getElementById('error-msg').textContent = '4-STELLIGEN RAUM-CODE EINGEBEN';
     return;
   }
-  // Phone joins as controller for that console
-  location.href = `controller.html?code=${code}`;
+  location.href = `console.html?code=${code}&viewer=1`;
 }
 
 const codeInput = document.getElementById('join-code');
