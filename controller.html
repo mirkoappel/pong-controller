@@ -29,6 +29,7 @@ body {
   justify-content: center;
   gap: 20px;
   color: #333;
+  z-index: 10;
 }
 #rotate-hint span { font-size: 0.75rem; letter-spacing: 0.2rem; }
 #rotate-icon {
@@ -40,8 +41,22 @@ body {
 @keyframes rot { 0%,35%,100%{transform:rotate(0deg)} 60%,85%{transform:rotate(90deg)} }
 
 @media (orientation: portrait) {
-  #rotate-hint  { display: flex; }
-  #layout       { display: none; }
+  #rotate-hint { display: flex; }
+  #layout      { display: none; }
+}
+
+/* ── Status LED ─────────────────────────────────────────── */
+#led {
+  position: fixed; top: 10px; right: 12px; z-index: 5;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #f44336;
+  box-shadow: 0 0 8px #f44336;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+#led.connected {
+  background: #4caf50;
+  box-shadow: 0 0 8px #4caf50;
 }
 
 /* ── Haupt-Layout ───────────────────────────────────────── */
@@ -49,84 +64,43 @@ body {
   width: 100%;
   height: 100%;
   display: grid;
-  grid-template-rows: auto 1fr;
   grid-template-columns: 5fr 2fr 5fr;
-  grid-template-areas:
-    "hdr hdr hdr"
-    "dpad mid actions";
 }
 
-/* ── Header ─────────────────────────────────────────────── */
-#hdr {
-  grid-area: hdr;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 8px 16px;
-  background: #222;
-  border-bottom: 1px solid #1a1a1a;
-  font-size: 0.6rem;
-  letter-spacing: 0.12rem;
-}
-#player-label { color: #333; }
-#player-num   { color: var(--color); font-weight: bold; }
-#conn-status  { display: flex; align-items: center; gap: 5px; color: #333; transition: color 0.3s; }
-#conn-status.connected { color: #4caf50; }
-#conn-status.error     { color: #f44336; }
-#status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-#conn-status.connected #status-dot { animation: pulse 1.2s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-/* ── D-Pad-Bereich ──────────────────────────────────────── */
-#dpad-area {
-  grid-area: dpad;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* ── Joystick-Bereich ───────────────────────────────────── */
+#joystick-area {
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
   background: #2a2a2a;
 }
 
-#dpad {
-  --sz: min(38vw, 70vh);
-  position: relative;
-  width: var(--sz);
-  height: var(--sz);
-  touch-action: none;
-}
-
-.dp {
+#joystick-base {
   position: absolute;
-  background: #1e1e1e;
-  box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
-  transition: background 0.04s, filter 0.04s;
-}
-.dp.active { background: #161616; filter: brightness(2); }
-
-/* Kreuz: je 1/3 der Gesamtgröße */
-#dp-c { top: 33.33%; left: 33.33%; width: 33.34%; height: 33.34%; }
-#dp-u { top: 0;      left: 33.33%; width: 33.34%; height: 33.33%; border-radius: 10px 10px 0 0; }
-#dp-d { top: 66.67%; left: 33.33%; width: 33.34%; height: 33.33%; border-radius: 0 0 10px 10px; }
-#dp-l { top: 33.33%; left: 0;      width: 33.33%; height: 33.34%; border-radius: 10px 0 0 10px; }
-#dp-r { top: 33.33%; left: 66.67%; width: 33.33%; height: 33.34%; border-radius: 0 10px 10px 0; }
-
-.dpa {
-  position: absolute;
-  width: 0; height: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.04);
+  border: 2px solid rgba(255,255,255,0.1);
+  transform: translate(-50%, -50%);
   pointer-events: none;
-  opacity: 0.15;
-  transition: opacity 0.04s;
-  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.08s;
 }
-.dpa.active { opacity: 0.8; }
-#a-u { top: 12%;  left: 50%; transform: translateX(-50%); border: min(1.8vw,12px) solid transparent; border-bottom-color: #ccc; }
-#a-d { bottom: 12%; left: 50%; transform: translateX(-50%); border: min(1.8vw,12px) solid transparent; border-top-color: #ccc; }
-#a-l { left: 12%;  top: 50%; transform: translateY(-50%); border: min(1.8vw,12px) solid transparent; border-right-color: #ccc; }
-#a-r { right: 12%; top: 50%; transform: translateY(-50%); border: min(1.8vw,12px) solid transparent; border-left-color: #ccc; }
+#joystick-base.visible { opacity: 1; }
+
+#joystick-thumb {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  border: 2px solid rgba(255,255,255,0.3);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.08s;
+}
+#joystick-thumb.visible { opacity: 1; }
 
 /* ── Mitte ──────────────────────────────────────────────── */
 #mid {
-  grid-area: mid;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -161,51 +135,8 @@ body {
   background: linear-gradient(90deg, transparent, #1e1e1e, transparent);
 }
 
-/* ── QR-Scan Overlay ────────────────────────────────────── */
-#scan-overlay {
-  display: none;
-  position: fixed; inset: 0; z-index: 100;
-  background: #000;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-}
-#scan-overlay.active { display: flex; }
-#scan-video {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  position: absolute; inset: 0;
-}
-#scan-frame {
-  position: relative; z-index: 2;
-  width: min(60vw, 60vh);
-  height: min(60vw, 60vh);
-  border: 2px solid rgba(255,255,255,0.3);
-  border-radius: 12px;
-  box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
-}
-#scan-hint {
-  position: relative; z-index: 2;
-  font-size: 0.7rem; letter-spacing: 0.1rem;
-  color: rgba(255,255,255,0.5);
-}
-#scan-close {
-  position: absolute; top: 16px; right: 16px; z-index: 3;
-  background: rgba(0,0,0,0.6);
-  border: 1px solid #333;
-  color: #aaa;
-  font-family: 'Courier New', monospace;
-  font-size: 0.6rem; letter-spacing: 0.1rem;
-  padding: 6px 14px; border-radius: 20px;
-  cursor: pointer;
-  touch-action: none;
-}
-#scan-canvas { display: none; }
-
-/* ── Aktions-Buttons ────────────────────────────────────── */
+/* ── Aktions-Buttons A + B ─────────────────────────────── */
 #actions-area {
-  grid-area: actions;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -242,9 +173,49 @@ body {
   transform: translateY(min(1vw,6px));
   filter: brightness(0.8);
 }
-/* B links-unten, A rechts-oben */
 #btn-b { bottom: 0; left: 0; }
 #btn-a { top: 0;    right: 0; }
+
+/* ── QR-Scan Overlay ────────────────────────────────────── */
+#scan-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 100;
+  background: #000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+#scan-overlay.active { display: flex; }
+#scan-video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+#scan-frame {
+  position: relative; z-index: 2;
+  width: min(60vw, 60vh);
+  height: min(60vw, 60vh);
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
+}
+#scan-hint {
+  position: relative; z-index: 2;
+  margin-top: 20px;
+  font-size: 0.7rem; letter-spacing: 0.1rem;
+  color: rgba(255,255,255,0.5);
+}
+#scan-close {
+  position: absolute; top: 16px; right: 16px; z-index: 3;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid #333;
+  color: #aaa;
+  font-family: 'Courier New', monospace;
+  font-size: 0.6rem; letter-spacing: 0.1rem;
+  padding: 6px 14px; border-radius: 20px;
+  cursor: pointer; touch-action: none;
+}
+#scan-canvas { display: none; }
 
 #version {
   position: fixed; bottom: 6px; right: 8px;
@@ -260,28 +231,12 @@ body {
   <span>PHONE DREHEN</span>
 </div>
 
-<div id="layout">
-  <div id="hdr">
-    <span id="player-label">SPIELER</span>
-    <span id="player-num">?</span>
-    <div id="conn-status">
-      <div id="status-dot"></div>
-      <span id="status-text">Verbinde...</span>
-    </div>
-  </div>
+<div id="led"></div>
 
-  <div id="dpad-area">
-    <div id="dpad">
-      <div class="dp" id="dp-c"></div>
-      <div class="dp" id="dp-u"></div>
-      <div class="dp" id="dp-d"></div>
-      <div class="dp" id="dp-l"></div>
-      <div class="dp" id="dp-r"></div>
-      <div class="dpa" id="a-u"></div>
-      <div class="dpa" id="a-d"></div>
-      <div class="dpa" id="a-l"></div>
-      <div class="dpa" id="a-r"></div>
-    </div>
+<div id="layout">
+  <div id="joystick-area">
+    <div id="joystick-base"></div>
+    <div id="joystick-thumb"></div>
   </div>
 
   <div id="mid">
@@ -292,14 +247,6 @@ body {
     <button class="sys-btn" id="btn-scan">⟳ QR</button>
   </div>
 
-  <div id="scan-overlay">
-    <video id="scan-video" playsinline muted></video>
-    <canvas id="scan-canvas"></canvas>
-    <div id="scan-frame"></div>
-    <div id="scan-hint">QR-Code auf Spielfeld richten</div>
-    <button id="scan-close">SCHLIESSEN</button>
-  </div>
-
   <div id="actions-area">
     <div id="actions">
       <button class="act-btn" id="btn-b">B</button>
@@ -308,7 +255,15 @@ body {
   </div>
 </div>
 
-<div id="version">v0.0.8</div>
+<div id="scan-overlay">
+  <video id="scan-video" playsinline muted></video>
+  <canvas id="scan-canvas"></canvas>
+  <div id="scan-frame"></div>
+  <div id="scan-hint">QR-Code auf Spielfeld richten</div>
+  <button id="scan-close">SCHLIESSEN</button>
+</div>
+
+<div id="version">v0.0.9</div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
@@ -319,64 +274,93 @@ const gamePeerId = params.get('peer');
 
 const color = player === 1 ? '#4fc3f7' : '#ef9a9a';
 document.documentElement.style.setProperty('--color', color);
-document.getElementById('player-num').textContent = player;
 
-const connStatus = document.getElementById('conn-status');
-const statusText = document.getElementById('status-text');
+const led        = document.getElementById('led');
+const connStatus = { set className(v) { led.classList.toggle('connected', v === 'connected'); } };
 let conn = null;
 
 // ── Gamepad-State ────────────────────────────────────────
-const gp = { up: false, down: false, left: false, right: false, a: false, b: false, select: false, start: false };
+const gp = { jx: 0, jy: 0, up: false, down: false, left: false, right: false, a: false, b: false, select: false, start: false };
 
 function send() {
   if (conn?.open) conn.send({ type: 'gamepad', player,
+    joystick: { x: gp.jx, y: gp.jy },
     dpad: { up: gp.up, down: gp.down, left: gp.left, right: gp.right },
     a: gp.a, b: gp.b, select: gp.select, start: gp.start });
 }
 
-// ── D-Pad ────────────────────────────────────────────────
-const dpad  = document.getElementById('dpad');
-const dpEls = { up: document.getElementById('dp-u'), down: document.getElementById('dp-d'), left: document.getElementById('dp-l'), right: document.getElementById('dp-r') };
-const arEls = { up: document.getElementById('a-u'),  down: document.getElementById('a-d'),  left: document.getElementById('a-l'),  right: document.getElementById('a-r') };
+// ── Joystick ─────────────────────────────────────────────
+const joystickArea  = document.getElementById('joystick-area');
+const joystickBase  = document.getElementById('joystick-base');
+const joystickThumb = document.getElementById('joystick-thumb');
 
-const activeIds = new Map();
+let joystickTouchId = null;
+let origin = { x: 0, y: 0 };
+let maxR = 0;
 
-function dirFrom(touch) {
-  const r  = dpad.getBoundingClientRect();
-  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-  const dx = touch.clientX - cx,   dy = touch.clientY - cy;
-  const zone = r.width / 4;
-  return { up: dy < -zone, down: dy > zone, left: dx < -zone, right: dx > zone };
+function joystickStart(touch) {
+  const r = joystickArea.getBoundingClientRect();
+  maxR = Math.min(r.width, r.height) * 0.32;
+  origin = { x: touch.clientX - r.left, y: touch.clientY - r.top };
+
+  const size = maxR * 2;
+  joystickBase.style.cssText  = `width:${size}px;height:${size}px;left:${origin.x}px;top:${origin.y}px`;
+  joystickThumb.style.cssText = `width:${maxR * 0.65}px;height:${maxR * 0.65}px;left:${origin.x}px;top:${origin.y}px`;
+  joystickBase.classList.add('visible');
+  joystickThumb.classList.add('visible');
 }
 
-function refreshDpad() {
-  const dirs = { up: false, down: false, left: false, right: false };
-  for (const d of activeIds.values()) {
-    if (d.up)    dirs.up    = true;
-    if (d.down)  dirs.down  = true;
-    if (d.left)  dirs.left  = true;
-    if (d.right) dirs.right = true;
-  }
-  gp.up = dirs.up; gp.down = dirs.down; gp.left = dirs.left; gp.right = dirs.right;
-  for (const dir of ['up','down','left','right']) {
-    dpEls[dir].classList.toggle('active', dirs[dir]);
-    arEls[dir].classList.toggle('active', dirs[dir]);
-  }
+function joystickMove(touch) {
+  const r  = joystickArea.getBoundingClientRect();
+  const dx = (touch.clientX - r.left) - origin.x;
+  const dy = (touch.clientY - r.top)  - origin.y;
+  const dist  = Math.sqrt(dx * dx + dy * dy);
+  const ratio = Math.min(dist, maxR) / (dist || 1);
+  const cx = dx * ratio, cy = dy * ratio;
+
+  joystickThumb.style.left = (origin.x + cx) + 'px';
+  joystickThumb.style.top  = (origin.y + cy) + 'px';
+
+  gp.jx = cx / maxR;
+  gp.jy = cy / maxR;
+  const t = 0.35;
+  gp.up    = gp.jy < -t;
+  gp.down  = gp.jy >  t;
+  gp.left  = gp.jx < -t;
+  gp.right = gp.jx >  t;
   send();
 }
 
-['touchstart','touchmove'].forEach(ev =>
-  dpad.addEventListener(ev, e => {
-    e.preventDefault();
-    for (const t of e.changedTouches) activeIds.set(t.identifier, dirFrom(t));
-    refreshDpad();
-  }, { passive: false })
-);
+function joystickEnd() {
+  joystickTouchId = null;
+  joystickBase.classList.remove('visible');
+  joystickThumb.classList.remove('visible');
+  gp.jx = gp.jy = 0;
+  gp.up = gp.down = gp.left = gp.right = false;
+  send();
+}
+
+joystickArea.addEventListener('touchstart', e => {
+  e.preventDefault();
+  if (joystickTouchId !== null) return;
+  const t = e.changedTouches[0];
+  joystickTouchId = t.identifier;
+  joystickStart(t);
+}, { passive: false });
+
+joystickArea.addEventListener('touchmove', e => {
+  e.preventDefault();
+  for (const t of e.changedTouches) {
+    if (t.identifier === joystickTouchId) joystickMove(t);
+  }
+}, { passive: false });
+
 ['touchend','touchcancel'].forEach(ev =>
-  dpad.addEventListener(ev, e => {
+  joystickArea.addEventListener(ev, e => {
     e.preventDefault();
-    for (const t of e.changedTouches) activeIds.delete(t.identifier);
-    refreshDpad();
+    for (const t of e.changedTouches) {
+      if (t.identifier === joystickTouchId) joystickEnd();
+    }
   }, { passive: false })
 );
 
@@ -394,14 +378,14 @@ bindBtn('btn-start',  'start');
 
 // ── PeerJS ───────────────────────────────────────────────
 function connect() {
-  if (!gamePeerId) { statusText.textContent = 'Kein Spiel – QR neu scannen'; connStatus.className = 'error'; return; }
+  if (!gamePeerId) { led.style.background = '#ff9800'; return; }
   const peer = new Peer();
   peer.on('open', () => {
     conn = peer.connect(gamePeerId, { metadata: { player } });
-    conn.on('open',  () => { statusText.textContent = 'Verbunden ✓'; connStatus.className = 'connected'; });
-    conn.on('close', () => { statusText.textContent = 'Getrennt – lade neu...'; connStatus.className = 'error'; setTimeout(() => location.reload(), 2000); });
+    conn.on('open',  () => { connStatus.className = 'connected'; });
+    conn.on('close', () => { connStatus.className = 'error'; setTimeout(() => location.reload(), 2000); });
   });
-  peer.on('error', () => { statusText.textContent = 'Verbindungsfehler'; connStatus.className = 'error'; setTimeout(() => location.reload(), 3000); });
+  peer.on('error', () => { connStatus.className = 'error'; setTimeout(() => location.reload(), 3000); });
 }
 connect();
 
@@ -423,25 +407,16 @@ const scanCanvas  = document.getElementById('scan-canvas');
 const scanCtx     = scanCanvas.getContext('2d', { willReadFrequently: true });
 let scanStream = null, scanRaf = null;
 
-// getUserMedia direkt im Event-Handler (iOS User-Gesture-Anforderung)
 document.getElementById('btn-scan').addEventListener('touchstart', e => {
   e.preventDefault();
   navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
-    .then(stream => {
-      scanStream = stream;
-      scanVideo.srcObject = stream;
-      return scanVideo.play();
-    })
-    .then(() => {
-      scanOverlay.classList.add('active');
-      scanLoop();
-    })
+    .then(stream => { scanStream = stream; scanVideo.srcObject = stream; return scanVideo.play(); })
+    .then(() => { scanOverlay.classList.add('active'); scanLoop(); })
     .catch(err => alert('Kamera nicht verfügbar: ' + err.message));
 }, { passive: false });
 
 document.getElementById('scan-close').addEventListener('touchstart', e => {
-  e.preventDefault();
-  stopScan();
+  e.preventDefault(); stopScan();
 }, { passive: false });
 
 function stopScan() {
@@ -462,11 +437,7 @@ function scanLoop() {
     if (code?.data) {
       try {
         const url = new URL(code.data);
-        if (url.searchParams.has('peer')) {
-          stopScan();
-          location.href = code.data;
-          return;
-        }
+        if (url.searchParams.has('peer')) { stopScan(); location.href = code.data; return; }
       } catch {}
     }
   }
