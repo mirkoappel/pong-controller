@@ -14,20 +14,27 @@ RETROCON ist eine **Plattform** für mehrere klassische Retro-Spiele. Die Steuer
 ### User Flow
 
 ```
-index.html          console.html              controller.html
-────────────        ──────────────────        ───────────────
-Boot-Screen    →    Setup-Screen         ←    QR scannen
-(CSS-Konsole)       (QR P1 + QR P2)          oder Code tippen
-Klicken             ↓ A drücken
-                    Hauptmenü
-                    ├─ PONG starten
-                    └─ SPIELER VERBINDEN → QR-Screen
+index.html             console.html              controller/
+────────────           ──────────────────        ───────────────
+Boot-Screen       →    Setup-Screen         ←    QR-Code scannen
+Terminal-Style         (QR P1 + QR P2)
+"PRESS ANY KEY"        ↓ A drücken
+RETROCON-Intro         Hauptmenü
+                       ├─ PONG starten
+                       └─ SPIELER VERBINDEN → QR-Screen
 ```
+
+### Boot-Sequenz (index.html)
+
+1. **Terminal-Bootloader** läuft automatisch durch (grüne Phosphor-Schrift, klassische BIOS-Zeilen)
+2. **„PRESS ANY KEY TO START"** blinkt auf – wartet auf Interaktion
+3. **RETROCON-Intro:** Buchstaben poppen einzeln auf (blau, fett, mit Sound) → Weiterleitung zu `console.html`
+
+Die Interaktion in Schritt 2 löst den AudioContext-Unlock, sodass Sounds danach zuverlässig spielen.
 
 ### Szenarien
 
 - **Lokal (Standard):** Alle sitzen vor einem Bildschirm. Laptopscreen = Spielfeld. 1–2 Smartphones als Controller.
-- **Remote (geplant):** Jeder Spieler hat eigenen Bildschirm. Beide Bildschirme zeigen denselben Spielstand (noch nicht implementiert).
 
 ---
 
@@ -47,10 +54,9 @@ Controller verbinden sich zu `console-XXXX`. Bei Code-Kollision (seltenst) wird 
 
 ```
 [Handy/Controller]  ──WebRTC P2P──►  [Laptop/Console]
-     controller.html                     console.html
+     controller/                        console.html
          ↑
-    QR scannen oder
-    Code eintippen
+    QR scannen
 ```
 
 Controller sendet alle 33ms:
@@ -60,23 +66,42 @@ Controller sendet alle 33ms:
   player: 1,                          // 1 oder 2
   joystick: { x, y, active },         // -1..+1, active=true wenn berührt
   dpad: { up, down, left, right },    // boolean, aus Joystick-Schwellwert
-  a: false, b: false,
-  select: false, start: false
+  a, b, select, start,                // Standard-Buttons
+  x, y, l, r                          // Reserve für größere Varianten
 }
 ```
+
+Alle Controller-Varianten senden dasselbe Schema — das Protokoll ist stabil, auch wenn eine Variante einzelne Tasten nicht belegt.
 
 ---
 
 ## Dateien
 
 ```
-index.html          Boot-Screen (CSS-Konsole, Klick → Boot-Animation → console.html)
-console.html        Host: Raum-Erstellung, Setup-Screen, Hauptmenü, Game-Loader
-controller.html     Gamepad: Analoger Joystick + A/B/SELECT/START, QR-Scanner
+index.html              Boot-Screen (Terminal-Bootloader → RETROCON-Intro → console.html)
+console.html            Host: Setup-Screen, Hauptmenü, Game-Loader
+controller/
+  index.html            Redirect-Stub → aktuelle Variante (Code aus URL durchgereicht)
+  core.js               Shared: Verbindung, Gamepad-Protokoll, Scan-/Picker-Overlays
+  variants/
+    classic/            Default-Variante: Joystick + A/B + Menü/Gear/Wifi
+      index.html
+      style.css
+      app.js
 games/
-  pong.js           Pong als Spielmodul
+  pong.js               Pong als Spielmodul
 README.md
 ```
+
+### Screen-System (console.html)
+
+| Screen | Beschreibung |
+|---|---|
+| `setup` | Initaler Screen. Zeigt QR-Codes für P1 und P2. Hint: „SCANNE DEN QR-CODE MIT DEINEM HANDY" → nach Connect: „DRÜCKE A ZUM STARTEN" |
+| `main-menu` | Spielauswahl. Navigation per Joystick/D-Pad, Bestätigung per A. |
+| `game-view` | Laufendes Spiel im Canvas. SELECT → zurück zum Menü. |
+
+Menünavigation: Jeder verbundene Controller kann das Menü steuern.
 
 ### Game-Modul Interface
 
@@ -103,24 +128,44 @@ window.RetroGames.pong = {
 };
 ```
 
-SELECT auf P1 → `api.exit()` aufrufen = zurück zum Menü.
+SELECT auf einem Controller → `api.exit()` = zurück zum Menü.
 
 ---
 
 ## Controller-UI
 
-`controller.html` öffnet je nach URL-Parameter in zwei Modi:
+`controller/` ist ein Plugin-System für austauschbare Gamepad-Layouts. `core.js` kapselt alles Gemeinsame (Verbindung, Senden, Overlays), jede Variante liefert ihr eigenes Layout + ihre eigene Input-Logik.
+
+### Routing
 
 | URL | Verhalten |
 |---|---|
-| `controller.html?code=AB23&player=1` | Direkt verbinden (via QR-Scan) |
-| `controller.html` (ohne Params) | Code-Eingabe-Screen mit QR-Scanner |
+| `controller/?code=AB23&player=1` | Redirect zur aktuell gewählten Variante (LocalStorage) mit Code durchgereicht |
+| `controller/variants/classic/?code=AB23&player=1` | Variante direkt, verbindet automatisch |
+| `controller/variants/classic/` (ohne Code) | Variante öffnet, LED rot — Wifi-Button öffnet QR-Scan zum Verbinden |
+
+### Variant „Classic" (Default)
 
 Layout (Querformat):
 - **Links:** Analoger Joystick (fixer Mittelpunkt, Rücksprung)
-- **Mitte:** SELECT · START · QR (Reconnect-Scan)
-- **Rechts:** A- und B-Button (diagonal versetzt)
+- **Mitte unten:** Home (= SELECT, zurück ins Menü) · Gear (Variant-Picker) · Wifi (QR-Scan)
+- **Rechts:** A- und B-Button in Mulden, diagonal versetzt
 - **LED oben rechts:** Grün = verbunden, Rot = getrennt
+
+Wifi-Icon leuchtet zusätzlich grün wenn verbunden — doppelte Status-Anzeige ohne Platz zu kosten.
+
+### Neue Variante hinzufügen
+
+1. Ordner `controller/variants/<id>/` anlegen mit `index.html`, `style.css`, `app.js`
+2. In `index.html` `core.js` + `app.js` laden, gewünschte Button-IDs ins DOM
+3. In `app.js`: `RC.bindBtn('id', 'key')` + eigene Joystick-/Touch-Logik, dann `RC.init()`
+4. Eintrag in `VARIANTS`-Array in `core.js` ergänzen
+
+Alle Varianten sprechen dasselbe Gamepad-Protokoll, sind also mit jedem Spiel kompatibel. Der Nutzer wechselt Varianten über den Gear-Button im Controller selbst — die Wahl steckt in `localStorage` und gilt für alle Räume.
+
+### Skins
+
+Innerhalb einer Variante steuern CSS-Custom-Properties die Farben (Gehäuse, Akzent, Mulden). Classic liefert `crimson` (Default), `emerald`, `cobalt`, `mono` — per `<body class="skin-xyz">` umschaltbar.
 
 ---
 
@@ -162,7 +207,7 @@ git push
 ## Nächste Schritte / Ideen
 
 - **Weitere Spiele:** Breakout, Snake, Tetris – selbe Controller-Infrastruktur, neues `games/xxx.js`
+- **Weitere Controller-Varianten:** D-Pad-only, SNES-Stil mit X/Y/L/R, Arcade-Stick, Minimalist (Touchfläche)
 - **Spieler-Status im Hauptmenü:** Kleine Indikatoren P1/P2 online/offline sichtbar ohne QR-Screen
 - **Sound-Verfeinerung:** Lautstärkeregler, Mute-Option
-- **Remote-Modus:** Zweiter Browser-Tab/Laptop empfängt Spielzustand (WebRTC Broadcast vom Host)
 - **Controller-Anpassung:** Tastenbelegung je Spiel konfigurierbar

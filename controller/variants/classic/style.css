@@ -1,0 +1,231 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ── Skins ─────────────────────────────────────────────────
+   Eine Skin = Set von CSS-Variablen. Umschalten via <body class="skin-xyz">.
+*/
+:root, .skin-crimson {
+  --housing:        #1f1f1f;
+  --well-bg:        rgba(0,0,0,0.12);
+  --well-shadow:    rgba(0,0,0,0.5);
+  --accent-top:     #a0284a;
+  --accent:         #8C1F3E;
+  --accent-bottom:  #6a1830;
+  --btn-text:       rgba(255,255,255,0.85);
+  --btn-highlight:  rgba(255,255,255,0.2);
+  --icon-color:     #666;
+  --icon-active:    #aaa;
+  --connected:      #4caf50;
+  --disconnected:   #f44336;
+  --ui-accent:      #4fc3f7;
+}
+
+.skin-emerald {
+  --housing:        #1a2220;
+  --accent-top:     #2fa56a;
+  --accent:         #1f8d55;
+  --accent-bottom:  #136b3f;
+}
+
+.skin-cobalt {
+  --housing:        #181c28;
+  --accent-top:     #4a7dff;
+  --accent:         #3964e0;
+  --accent-bottom:  #2a4cb5;
+}
+
+.skin-mono {
+  --housing:        #eaeaea;
+  --well-bg:        rgba(0,0,0,0.08);
+  --well-shadow:    rgba(0,0,0,0.2);
+  --accent-top:     #444;
+  --accent:         #2a2a2a;
+  --accent-bottom:  #0e0e0e;
+  --icon-color:     #888;
+  --icon-active:    #222;
+}
+
+body {
+  background: var(--housing);
+  width: 100dvw;
+  height: 100dvh;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  font-family: 'Courier New', monospace;
+}
+
+/* ── Portrait: Drehhinweis ──────────────────────────────── */
+#rotate-hint {
+  display: none;
+  position: fixed; inset: 0;
+  background: #111;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  color: #888;
+  z-index: 10;
+}
+#rotate-hint span { font-size: 0.75rem; letter-spacing: 0.2rem; }
+#rotate-icon {
+  width: 44px; height: 60px;
+  border: 2px solid #555;
+  border-radius: 6px;
+  animation: rot 2.5s ease-in-out infinite;
+}
+@keyframes rot { 0%,35%,100%{transform:rotate(0deg)} 60%,85%{transform:rotate(90deg)} }
+
+@media (orientation: portrait) {
+  #rotate-hint { display: flex; }
+  #layout      { display: none; }
+}
+
+/* ── Status LED ─────────────────────────────────────────── */
+#led {
+  position: fixed; top: 10px; right: 12px; z-index: 5;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--disconnected);
+  transition: background 0.3s;
+}
+#led.connected { background: var(--connected); }
+
+/* ── Haupt-Layout ───────────────────────────────────────── */
+#layout {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 5fr 2fr 5fr;
+}
+
+/* ── Joystick-Bereich ───────────────────────────────────── */
+#joystick-area {
+  position: relative;
+  touch-action: none;
+  background: var(--housing);
+}
+
+#joystick-base {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--well-bg);
+  box-shadow: inset 0 3px 6px var(--well-shadow);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+#joystick-thumb {
+  position: absolute;
+  width: min(16vw, 28vh);
+  height: min(16vw, 28vh);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 25%, var(--btn-highlight) 0%, rgba(255,255,255,0) 45%),
+    linear-gradient(180deg, var(--accent-top) 0%, var(--accent) 55%, var(--accent-bottom) 100%);
+  box-shadow:
+    0 6px 14px rgba(0,0,0,0.45),
+    inset 0 -2px 4px rgba(0,0,0,0.25);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: left 0.04s, top 0.04s;
+}
+#joystick-area.dragging #joystick-thumb { transition: none; }
+
+/* ── Mitte ──────────────────────────────────────────────── */
+#mid {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12px;
+  padding-bottom: 18%;
+  background: var(--housing);
+}
+
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--well-bg);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--icon-color);
+  cursor: pointer;
+  box-shadow: inset 0 2px 5px var(--well-shadow);
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s, background 0.15s;
+}
+.icon-btn svg { width: 20px; height: 20px; }
+.icon-btn.active { color: var(--icon-active); background: rgba(0,0,0,0.2); }
+.icon-btn.connected { color: var(--connected); }
+
+/* ── Aktions-Buttons A + B ─────────────────────────────── */
+#actions-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--housing);
+}
+
+#actions {
+  --btn: min(16vw, 28vh);
+  --well-gap: 10px;
+  --well: calc(var(--btn) + var(--well-gap) * 2);
+  position: relative;
+  width: calc(var(--btn) * 2.4 + var(--well-gap) * 2);
+  height: calc(var(--btn) * 1.8 + var(--well-gap) * 2);
+}
+
+.btn-well {
+  position: absolute;
+  width: var(--well);
+  height: var(--well);
+  border-radius: 50%;
+  background: var(--well-bg);
+  box-shadow: inset 0 3px 6px var(--well-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.well-b { bottom: 0; left: 0; }
+.well-a { top: 0;    right: 0; }
+
+.act-btn {
+  position: relative;
+  width: var(--btn);
+  height: var(--btn);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Courier New', monospace;
+  font-size: min(4vw, 1.4rem);
+  font-weight: bold;
+  color: var(--btn-text);
+  background:
+    radial-gradient(circle at 35% 25%, var(--btn-highlight) 0%, rgba(255,255,255,0) 45%),
+    linear-gradient(180deg, var(--accent-top) 0%, var(--accent) 55%, var(--accent-bottom) 100%);
+  box-shadow:
+    0 6px 14px rgba(0,0,0,0.45),
+    inset 0 -2px 4px rgba(0,0,0,0.25);
+  transition: box-shadow 0.04s, transform 0.04s, filter 0.04s;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.act-btn.active {
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.3),
+    inset 0 -1px 2px rgba(0,0,0,0.2);
+  transform: translateY(2px);
+  filter: brightness(0.9);
+}
+
+#version {
+  position: fixed; bottom: 6px; right: 8px;
+  font-size: 0.5rem; color: #333;
+  pointer-events: none;
+}

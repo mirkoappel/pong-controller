@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Controller</title>
+<script>
+// Leitet zur aktuell gewählten Variante weiter.
+// Code/Player aus der URL werden durchgereicht.
+const VARIANT_KEY = 'retrocon_variant';
+const id = localStorage.getItem(VARIANT_KEY) || 'classic';
+location.replace(`variants/${id}/${location.search}`);
+</script>
+</head>
+<body></body>
+</html>

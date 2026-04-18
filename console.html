@@ -309,8 +309,8 @@ function setupPeer(attempt = 0) {
 
   peer.on('open', () => {
     const base = location.href.replace(/console\.html.*$/, '');
-    const url1 = `${base}controller.html?code=${code}&player=1`;
-    const url2 = `${base}controller.html?code=${code}&player=2`;
+    const url1 = `${base}controller/?code=${code}&player=1`;
+    const url2 = `${base}controller/?code=${code}&player=2`;
 
     document.getElementById('settings-badge-code').textContent = code;
 
