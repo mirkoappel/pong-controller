@@ -218,6 +218,57 @@ body {
   font-size: 0.5rem; color: #333;
   pointer-events: none;
 }
+
+/* ── Code-Eingabe ──────────────────────────────────────── */
+#code-screen {
+  display: none;
+  position: fixed; inset: 0; z-index: 50;
+  background: #0a0a0a;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 20px;
+}
+#code-screen.active { display: flex; }
+#code-screen h2 {
+  color: #fff;
+  font-size: 1rem;
+  letter-spacing: 0.3rem;
+  font-weight: normal;
+}
+#code-input {
+  background: #111;
+  border: 2px solid #333;
+  color: #4fc3f7;
+  font-family: 'Courier New', monospace;
+  font-size: 2.4rem;
+  letter-spacing: 0.6rem;
+  padding: 16px 20px;
+  width: min(80vw, 320px);
+  border-radius: 6px;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow: 0 0 12px rgba(79,195,247,0.6);
+}
+#code-input:focus {
+  outline: none;
+  border-color: #4fc3f7;
+  box-shadow: 0 0 16px rgba(79, 195, 247, 0.3);
+}
+#code-screen button {
+  background: #111;
+  border: 2px solid #333;
+  color: #fff;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.15rem;
+  padding: 14px 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  width: min(80vw, 320px);
+}
+#code-error { color: #f44336; font-size: 0.7rem; letter-spacing: 0.1rem; min-height: 1em; }
 </style>
 </head>
 <body>
@@ -259,14 +310,29 @@ body {
   <button id="scan-close">SCHLIESSEN</button>
 </div>
 
-<div id="version">v0.1.1</div>
+<div id="code-screen">
+  <h2>CONSOLE-CODE</h2>
+  <input id="code-input" maxlength="4" placeholder="• • • •" autocapitalize="characters" autocomplete="off">
+  <div id="code-error"></div>
+  <button id="code-submit">VERBINDEN</button>
+  <button id="code-scan-btn">QR SCANNEN</button>
+</div>
+
+<div id="version">v0.2.0</div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
-const params     = new URLSearchParams(location.search);
-const player     = parseInt(params.get('player')) || 1;
-const gamePeerId = params.get('peer');
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const CODE_RE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
+
+const params = new URLSearchParams(location.search);
+let player   = parseInt(params.get('player')) || 1;
+let code     = (params.get('code') || '').toUpperCase();
+let gamePeerId = params.get('peer'); // Legacy-Support
+
+if (code && !CODE_RE.test(code)) code = '';
+if (code) gamePeerId = 'console-' + code;
 
 const color = player === 1 ? '#4fc3f7' : '#ef9a9a';
 document.documentElement.style.setProperty('--color', color);
@@ -376,7 +442,7 @@ bindBtn('btn-start',  'start');
 
 // ── PeerJS ───────────────────────────────────────────────
 function connect() {
-  if (!gamePeerId) { led.style.background = '#ff9800'; return; }
+  if (!gamePeerId) { showCodeScreen(); return; }
   const peer = new Peer();
   peer.on('open', () => {
     conn = peer.connect(gamePeerId, { metadata: { player } });
@@ -435,12 +501,43 @@ function scanLoop() {
     if (code?.data) {
       try {
         const url = new URL(code.data);
-        if (url.searchParams.has('peer')) { stopScan(); location.href = code.data; return; }
+        if (url.searchParams.has('code') || url.searchParams.has('peer')) {
+          stopScan(); location.href = code.data; return;
+        }
       } catch {}
     }
   }
   scanRaf = requestAnimationFrame(scanLoop);
 }
+
+// ── Code-Eingabe-Screen ─────────────────────────────────
+const codeScreen = document.getElementById('code-screen');
+const codeInput  = document.getElementById('code-input');
+const codeError  = document.getElementById('code-error');
+
+function showCodeScreen() {
+  codeScreen.classList.add('active');
+  setTimeout(() => codeInput.focus(), 50);
+}
+
+function submitCode() {
+  const v = codeInput.value.trim().toUpperCase();
+  if (!CODE_RE.test(v)) { codeError.textContent = '4-STELLIGEN CODE EINGEBEN'; return; }
+  location.href = `controller.html?code=${v}&player=${player}`;
+}
+
+codeInput.addEventListener('input', e => {
+  e.target.value = e.target.value.toUpperCase().replace(/[^ABCDEFGHJKLMNPQRSTUVWXYZ23456789]/g, '');
+});
+codeInput.addEventListener('keypress', e => { if (e.key === 'Enter') submitCode(); });
+document.getElementById('code-submit').addEventListener('click', submitCode);
+document.getElementById('code-scan-btn').addEventListener('touchstart', e => {
+  e.preventDefault();
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+    .then(stream => { scanStream = stream; scanVideo.srcObject = stream; return scanVideo.play(); })
+    .then(() => { scanOverlay.classList.add('active'); scanLoop(); })
+    .catch(err => alert('Kamera nicht verfügbar: ' + err.message));
+}, { passive: false });
 </script>
 </body>
 </html>

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retro Console</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0a;
+  min-height: 100dvh;
+  font-family: 'Courier New', monospace;
+  color: #fff;
+  overflow: hidden;
+}
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,0.18) 3px, rgba(0,0,0,0) 4px);
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* ── Home ──────────────────────────────────────────────── */
+#home {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  padding: 40px;
+  align-items: center;
+}
+#home.hidden { display: none; }
+
+#home-left {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+#code-display {
+  background: #111;
+  border: 2px solid #1e1e1e;
+  border-radius: 8px;
+  padding: 30px;
+  text-align: center;
+}
+#code-label {
+  color: #555;
+  font-size: 0.7rem;
+  letter-spacing: 0.4rem;
+  margin-bottom: 12px;
+}
+#code-value {
+  color: #4fc3f7;
+  font-size: clamp(3rem, 8vw, 5rem);
+  letter-spacing: 0.6rem;
+  text-shadow: 0 0 24px rgba(79,195,247,0.5);
+}
+#qr-box {
+  background: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  align-self: center;
+}
+#join-url {
+  color: #444;
+  font-size: 0.7rem;
+  letter-spacing: 0.1rem;
+  text-align: center;
+  word-break: break-all;
+}
+
+#home-right {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+#home-right h2 {
+  color: #555;
+  font-size: 0.7rem;
+  letter-spacing: 0.4rem;
+  font-weight: normal;
+  margin-bottom: 6px;
+}
+
+.menu-item {
+  background: #111;
+  border: 2px solid #333;
+  color: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  letter-spacing: 0.15rem;
+  padding: 18px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.1s;
+}
+.menu-item.selected {
+  border-color: #4fc3f7;
+  background: #0e1a20;
+  box-shadow: 0 0 16px rgba(79,195,247,0.3);
+}
+.menu-item .badge {
+  float: right;
+  color: #555;
+  font-size: 0.75rem;
+}
+
+#players {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+.player-slot {
+  flex: 1;
+  background: #111;
+  border: 2px solid #1e1e1e;
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+  font-size: 0.7rem;
+  letter-spacing: 0.15rem;
+  color: #444;
+}
+.player-slot.connected { border-color: #4caf50; color: #4caf50; }
+
+/* ── Game-View ─────────────────────────────────────────── */
+#game-view {
+  display: none;
+  position: fixed; inset: 0;
+  background: #000;
+}
+#game-view.active { display: block; }
+#game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#exit-hint {
+  position: fixed; top: 12px; left: 12px;
+  color: #444;
+  font-size: 0.65rem;
+  letter-spacing: 0.1rem;
+  z-index: 5;
+}
+
+#footer {
+  position: fixed;
+  bottom: 14px; right: 14px;
+  color: #222;
+  font-size: 0.65rem;
+  letter-spacing: 0.1rem;
+  z-index: 101;
+}
+#status {
+  position: fixed;
+  bottom: 14px; left: 14px;
+  color: #444;
+  font-size: 0.65rem;
+  letter-spacing: 0.1rem;
+  z-index: 101;
+}
+</style>
+</head>
+<body>
+
+<div id="home">
+  <div id="home-left">
+    <div id="code-display">
+      <div id="code-label">CONSOLE-CODE</div>
+      <div id="code-value">– – – –</div>
+    </div>
+    <div id="qr-box"><div id="qr"></div></div>
+    <div id="join-url"></div>
+  </div>
+
+  <div id="home-right">
+    <h2>SPIELE</h2>
+    <button class="menu-item selected" data-action="game" data-game="pong">PONG <span class="badge">1–2 SPIELER</span></button>
+
+    <h2 style="margin-top: 20px;">SPIELER</h2>
+    <div id="players">
+      <div class="player-slot" id="slot-1">P1 OFFLINE</div>
+      <div class="player-slot" id="slot-2">P2 OFFLINE</div>
+    </div>
+  </div>
+</div>
+
+<div id="game-view">
+  <canvas id="game-canvas"></canvas>
+  <div id="exit-hint">SELECT = ZURÜCK</div>
+</div>
+
+<div id="status">VERBINDE…</div>
+<div id="footer">v0.2.0</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="games/pong.js"></script>
+<script>
+// ── Code-Generierung ────────────────────────────────────
+const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function genCode() {
+  let s = '';
+  for (let i = 0; i < 4; i++) s += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
+  return s;
+}
+
+let code = '';
+let peer = null;
+const conns = new Map(); // player -> conn
+const lastInput = new Map(); // player -> gamepad state
+const prevInput = new Map(); // player -> previous gamepad (for edge detection)
+
+const statusEl = document.getElementById('status');
+const codeValueEl = document.getElementById('code-value');
+const joinUrlEl = document.getElementById('join-url');
+
+function setupPeer(attempt = 0) {
+  code = genCode();
+  const peerId = 'console-' + code;
+  peer = new Peer(peerId);
+
+  peer.on('open', () => {
+    codeValueEl.textContent = code.split('').join(' ');
+    const baseUrl = location.href.replace(/console\.html.*$/, '');
+    const joinUrl = `${baseUrl}controller.html?code=${code}&player=1`;
+    joinUrlEl.textContent = joinUrl.replace(/^https?:\/\//, '');
+    new QRCode(document.getElementById('qr'), { text: joinUrl, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+    statusEl.textContent = 'BEREIT · CODE ' + code;
+  });
+
+  peer.on('error', err => {
+    if (err.type === 'unavailable-id' && attempt < 5) {
+      peer.destroy();
+      setupPeer(attempt + 1);
+    } else {
+      statusEl.textContent = 'FEHLER: ' + err.type;
+    }
+  });
+
+  peer.on('connection', conn => {
+    const player = conn.metadata?.player || 1;
+    if (conns.has(player)) {
+      try { conns.get(player).close(); } catch {}
+    }
+    conns.set(player, conn);
+
+    conn.on('open', () => updatePlayerSlot(player, true));
+    conn.on('data', data => {
+      if (data?.type === 'gamepad') {
+        prevInput.set(player, lastInput.get(player) || null);
+        lastInput.set(player, data);
+        if (currentGame?.input) currentGame.input(player, data, prevInput.get(player));
+        else handleHomeInput(player, data, prevInput.get(player));
+      }
+    });
+    conn.on('close', () => {
+      if (conns.get(player) === conn) {
+        conns.delete(player);
+        lastInput.delete(player);
+        updatePlayerSlot(player, false);
+        if (currentGame?.onDisconnect) currentGame.onDisconnect(player);
+      }
+    });
+  });
+}
+
+function updatePlayerSlot(player, connected) {
+  const el = document.getElementById('slot-' + player);
+  if (!el) return;
+  el.classList.toggle('connected', connected);
+  el.textContent = `P${player} ` + (connected ? 'ONLINE' : 'OFFLINE');
+}
+
+setupPeer();
+
+// ── Home-Menü-Navigation per Controller ────────────────
+const home = document.getElementById('home');
+const gameView = document.getElementById('game-view');
+const menuItems = () => [...document.querySelectorAll('.menu-item')];
+let menuIdx = 0;
+
+function highlightMenu() {
+  menuItems().forEach((el, i) => el.classList.toggle('selected', i === menuIdx));
+}
+
+function handleHomeInput(player, gp, prev) {
+  if (player !== 1) return; // Nur P1 navigiert das Menü
+  const items = menuItems();
+  const downEdge = gp.dpad.down && !(prev?.dpad?.down);
+  const upEdge   = gp.dpad.up   && !(prev?.dpad?.up);
+  const aEdge    = gp.a && !(prev?.a);
+  if (downEdge) { menuIdx = (menuIdx + 1) % items.length; highlightMenu(); }
+  if (upEdge)   { menuIdx = (menuIdx - 1 + items.length) % items.length; highlightMenu(); }
+  if (aEdge)    activateMenu(items[menuIdx]);
+}
+
+menuItems().forEach((el, i) => el.addEventListener('click', () => { menuIdx = i; highlightMenu(); activateMenu(el); }));
+
+function activateMenu(el) {
+  if (el.dataset.action === 'game') startGame(el.dataset.game);
+}
+
+// ── Game-Loader ────────────────────────────────────────
+let currentGame = null;
+let rafId = null;
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width  = canvas.clientWidth  * devicePixelRatio;
+  canvas.height = canvas.clientHeight * devicePixelRatio;
+}
+window.addEventListener('resize', () => { resizeCanvas(); currentGame?.resize?.(canvas.width, canvas.height); });
+
+function startGame(name) {
+  const mod = window.RetroGames?.[name];
+  if (!mod) { alert('Spiel nicht gefunden: ' + name); return; }
+  home.classList.add('hidden');
+  gameView.classList.add('active');
+  resizeCanvas();
+  const numPlayers = Math.max(1, conns.size);
+  currentGame = mod.create(ctx, canvas.width, canvas.height, numPlayers, {
+    exit: exitGame,
+    getConns: () => conns,
+    code
+  });
+  // Anfangs-Input weitergeben
+  for (const [player, gp] of lastInput) currentGame.input?.(player, gp, null);
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(50, now - last) / 1000;
+    last = now;
+    currentGame.update?.(dt);
+    currentGame.draw?.();
+    rafId = requestAnimationFrame(loop);
+  }
+  rafId = requestAnimationFrame(loop);
+}
+
+function exitGame() {
+  cancelAnimationFrame(rafId);
+  currentGame?.destroy?.();
+  currentGame = null;
+  gameView.classList.remove('active');
+  home.classList.remove('hidden');
+}
+
+highlightMenu();
+</script>
+</body>
+</html>

@@ -83,24 +83,13 @@ iOS erfordert `DeviceOrientationEvent.requestPermission()` → Button auf der Co
 ## Dateien
 
 ```
-deploy/
-├── index.html        # Spielfeld (Pong, Canvas, PeerJS-Host)
-└── controller.html   # Handy-Seite (Gyro, PeerJS-Client, Paddle-Vorschau)
+index.html        # Spielfeld (Pong, Canvas, PeerJS-Host)
+controller.html   # Handy-Seite (Gyro, PeerJS-Client, Paddle-Vorschau)
+README.md
+.gitignore
 ```
 
 **Kein Server notwendig.** Beide Dateien sind rein statisch.
-
-### Lokale Version (veraltet, nur zur Referenz)
-
-Im übergeordneten Ordner liegt noch eine WebSocket-basierte Version:
-```
-public/
-├── game.html
-└── controller.html
-server.js             # Node.js + ws
-package.json
-```
-Diese läuft lokal mit `node server.js`, funktioniert aber nicht auf iOS (kein HTTPS).
 
 ---
 
@@ -110,7 +99,6 @@ Das Repo ist auf GitHub Pages konfiguriert (Branch: `main`, Pfad: `/`).
 
 ```bash
 # Änderungen deployen:
-cd deploy/
 git add .
 git commit -m "Beschreibung"
 git push

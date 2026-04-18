@@ -3,412 +3,177 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pong</title>
+<title>Retro Console</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: #0a0a0a;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    font-family: 'Courier New', monospace;
-    color: #fff;
-    overflow: hidden;
-  }
-  canvas { display: block; }
-  #version {
-    position: fixed; bottom: 8px; right: 10px;
-    font-size: 0.6rem; color: #222; letter-spacing: 0.05rem;
-    font-family: 'Courier New', monospace; pointer-events: none;
-  }
-  .screen {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.92);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 32px;
-  }
-  .screen h1 { font-size: 3rem; letter-spacing: 0.5rem; }
-  .screen p  { color: #666; font-size: 0.9rem; }
-  .mode-buttons { display: flex; gap: 24px; }
-  .mode-btn {
-    background: #111;
-    border: 2px solid #333;
-    color: #fff;
-    font-family: 'Courier New', monospace;
-    font-size: 1.1rem;
-    letter-spacing: 0.1rem;
-    padding: 20px 48px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-  }
-  .mode-btn:hover { border-color: #fff; background: #1a1a1a; }
-  .mode-btn .sub { display: block; font-size: 0.7rem; color: #555; margin-top: 6px; }
-  .qr-section { display: flex; gap: 60px; align-items: flex-start; }
-  .qr-box { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-  .qr-box .label { font-size: 0.8rem; letter-spacing: 0.15rem; color: #888; }
-  .qr-wrap { background: #fff; padding: 10px; border-radius: 8px; }
-  .pill {
-    font-size: 0.75rem;
-    padding: 5px 14px;
-    border-radius: 20px;
-    background: #1a1a1a;
-    color: #555;
-    transition: all 0.3s;
-  }
-  .pill.connected { background: #0d2b0d; color: #4caf50; }
-  #btn-start {
-    display: none;
-    background: #fff;
-    color: #000;
-    border: none;
-    font-family: 'Courier New', monospace;
-    font-size: 1rem;
-    letter-spacing: 0.15rem;
-    padding: 14px 40px;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-  #peer-status { font-size: 0.75rem; color: #333; }
-  #screen-win { gap: 24px; }
-  #trophy { font-size: 7rem; animation: bob 0.7s ease-in-out infinite alternate; }
-  @keyframes bob { from { transform: scale(1) translateY(0); } to { transform: scale(1.08) translateY(-8px); } }
-  #win-title { font-size: 2rem; letter-spacing: 0.4rem; }
-  #win-scores { font-size: 1rem; color: #444; letter-spacing: 0.2rem; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0a;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Courier New', monospace;
+  color: #fff;
+  overflow: hidden;
+  gap: 50px;
+  padding: 20px;
+}
+
+/* Subtle CRT scanlines */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,0.18) 3px, rgba(0,0,0,0) 4px);
+  pointer-events: none;
+  z-index: 100;
+}
+
+h1 {
+  font-size: clamp(2rem, 7vw, 4.5rem);
+  letter-spacing: 0.5rem;
+  text-shadow: 0 0 24px rgba(79, 195, 247, 0.5), 0 0 4px rgba(79,195,247,0.8);
+  text-align: center;
+}
+.subtitle {
+  color: #333;
+  font-size: 0.7rem;
+  letter-spacing: 0.4rem;
+  margin-top: -40px;
+  text-align: center;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(90vw, 340px);
+}
+.menu.hidden { display: none; }
+
+.menu-btn {
+  background: #111;
+  border: 2px solid #333;
+  color: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  letter-spacing: 0.15rem;
+  padding: 18px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.menu-btn:hover, .menu-btn:focus {
+  border-color: #4fc3f7;
+  background: #0e1a20;
+  box-shadow: 0 0 16px rgba(79, 195, 247, 0.3);
+  outline: none;
+}
+.menu-btn.secondary {
+  background: transparent;
+  border-color: #1e1e1e;
+  color: #555;
+  font-size: 0.8rem;
+}
+.menu-btn.secondary:hover {
+  border-color: #333;
+  color: #888;
+  box-shadow: none;
+}
+
+/* Code entry */
+.code-input {
+  background: #111;
+  border: 2px solid #333;
+  color: #4fc3f7;
+  font-family: inherit;
+  font-size: 2.4rem;
+  letter-spacing: 0.6rem;
+  padding: 16px 20px;
+  width: 100%;
+  border-radius: 6px;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow: 0 0 12px rgba(79,195,247,0.6);
+}
+.code-input:focus {
+  outline: none;
+  border-color: #4fc3f7;
+  box-shadow: 0 0 16px rgba(79, 195, 247, 0.3);
+}
+.code-input::placeholder { color: #222; letter-spacing: 0.6rem; }
+
+#error-msg {
+  color: #f44336;
+  font-size: 0.75rem;
+  letter-spacing: 0.1rem;
+  text-align: center;
+  min-height: 1em;
+}
+
+#footer {
+  position: fixed;
+  bottom: 14px;
+  color: #222;
+  font-size: 0.65rem;
+  letter-spacing: 0.1rem;
+  z-index: 101;
+}
 </style>
 </head>
 <body>
 
-<canvas id="canvas"></canvas>
-<div id="version">v0.1.2</div>
+<h1>RETRO CONSOLE</h1>
+<div class="subtitle">SPIELE ÜBER WEBRTC</div>
 
-<div class="screen" id="screen-win" style="display:none">
-  <div id="trophy">🏆</div>
-  <div id="win-title">SPIELER 1 GEWINNT</div>
-  <div id="win-scores"></div>
-  <button class="mode-btn" onclick="restartGame()">NOCHMAL</button>
+<div class="menu" id="main-menu">
+  <button class="menu-btn" onclick="newConsole()">NEUE CONSOLE</button>
+  <button class="menu-btn" onclick="showJoin()">CONSOLE BEITRETEN</button>
 </div>
 
-<div class="screen" id="screen-mode">
-  <h1>PONG</h1>
-  <div class="mode-buttons">
-    <button class="mode-btn" onclick="selectMode(1)">
-      1 SPIELER
-      <span class="sub">gegen KI</span>
-    </button>
-    <button class="mode-btn" onclick="selectMode(2)">
-      2 SPIELER
-      <span class="sub">beide per Handy</span>
-    </button>
-  </div>
+<div class="menu hidden" id="join-menu">
+  <input class="code-input" id="join-code" maxlength="4" placeholder="• • • •" autocapitalize="characters" autocomplete="off">
+  <div id="error-msg"></div>
+  <button class="menu-btn" onclick="joinConsole()">VERBINDEN</button>
+  <button class="menu-btn secondary" onclick="showMain()">ZURÜCK</button>
 </div>
 
-<div class="screen" id="screen-connect" style="display:none">
-  <h1>PONG</h1>
-  <p id="connect-msg">Scanne deinen QR-Code mit dem Handy</p>
-  <div class="qr-section" id="qr-section">
-    <div class="qr-box" id="box1">
-      <div class="label">SPIELER 1</div>
-      <div class="qr-wrap" id="qr1"></div>
-      <div class="pill" id="status1">Warten...</div>
-    </div>
-    <div class="qr-box" id="box2">
-      <div class="label">SPIELER 2</div>
-      <div class="qr-wrap" id="qr2"></div>
-      <div class="pill" id="status2">Warten...</div>
-    </div>
-  </div>
-  <button id="btn-start" onclick="launchGame()">SPIELEN →</button>
-  <div id="peer-status">Verbinde mit Netzwerk...</div>
-</div>
+<div id="footer">v0.2.0</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
-const canvas = document.getElementById('canvas');
-const ctx    = canvas.getContext('2d');
-const W = 900, H = 550;
-canvas.width = W; canvas.height = H;
-
-const PADDLE_W = 12, PADDLE_H = 90, BALL_R = 8;
-const PADDLE_SPEED = 8, AI_SPEED = 4.2, WIN_SCORE = 10;
-
-// ── Audio ─────────────────────────────────────────────────────
-let audioCtx = null;
-function audio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  return audioCtx;
-}
-function beep(freq, dur, vol = 0.3) {
-  const ctx = audio();
-  const osc = ctx.createOscillator(), gain = ctx.createGain();
-  osc.connect(gain); gain.connect(ctx.destination);
-  osc.type = 'square'; osc.frequency.value = freq;
-  gain.gain.setValueAtTime(vol, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
-  osc.start(); osc.stop(ctx.currentTime + dur);
-}
-function sndPaddle() { beep(480, 0.05); }
-function sndWall()   { beep(240, 0.04, 0.2); }
-function sndScore()  { beep(110, 0.35, 0.4); }
-function sndWin()    { [523,659,784,1047].forEach((f,i) => setTimeout(() => beep(f, 0.18, 0.45), i * 130)); }
-
-let mode = 0;
-let peer, connections = {};
-let peerId = null;
-
-const gamepad = {
-  1: { up: false, down: false, left: false, right: false },
-  2: { up: false, down: false, left: false, right: false },
-};
-const joystick = { 1: { x: 0, y: 0 }, 2: { x: 0, y: 0 } };
-
-let state = {
-  p1: { y: H/2 - PADDLE_H/2, score: 0 },
-  p2: { y: H/2 - PADDLE_H/2, score: 0 },
-  ball: { x: W/2, y: H/2, vx: 5, vy: 3 },
-  running: false,
-  countdown: 0,
-};
-
-const connected = { 1: false, 2: false };
-let pausedByDisconnect = false;
-
-// ── PeerJS setup ──────────────────────────────────────────────
-function initPeer() {
-  peer = new Peer();
-  peer.on('open', id => {
-    peerId = id;
-    document.getElementById('peer-status').textContent = 'Bereit';
-    buildQRCodes();
-  });
-  peer.on('connection', conn => {
-    const player = parseInt(conn.metadata?.player || 1);
-    connections[player] = conn;
-    conn.on('open', () => {
-      connected[player] = true;
-      setStatus(player, 'Verbunden ✓', true);
-      if (pausedByDisconnect && (mode === 1 || (connected[1] && connected[2]))) {
-        pausedByDisconnect = false;
-        startCountdown();
-      } else {
-        checkReady();
-      }
-    });
-    conn.on('data', msg => {
-      if (msg.type === 'gamepad') {
-        Object.assign(gamepad[player], msg.dpad);
-        if (msg.joystick) joystick[player] = msg.joystick;
-      }
-    });
-    conn.on('close', () => {
-      connected[player] = false;
-      setStatus(player, 'Getrennt', false);
-      gamepad[player]  = { up: false, down: false, left: false, right: false };
-      joystick[player] = { x: 0, y: 0 };
-      if (state.running) {
-        state.running = false;
-        pausedByDisconnect = true;
-        showReconnectScreen(player);
-      }
-    });
-  });
-  peer.on('error', () => {
-    document.getElementById('peer-status').textContent = 'Netzwerkfehler – lade neu';
-  });
+function newConsole() {
+  location.href = 'console.html';
 }
 
-function controllerURL(player) {
-  const base = location.href.replace('index.html', '').replace(/\/$/, '');
-  return `${base}/controller.html?peer=${peerId}&player=${player}`;
+function showJoin() {
+  document.getElementById('main-menu').classList.add('hidden');
+  document.getElementById('join-menu').classList.remove('hidden');
+  setTimeout(() => document.getElementById('join-code').focus(), 50);
+}
+function showMain() {
+  document.getElementById('join-menu').classList.add('hidden');
+  document.getElementById('main-menu').classList.remove('hidden');
+  document.getElementById('error-msg').textContent = '';
 }
 
-function buildQRCodes() {
-  if (!peerId) return;
-  document.getElementById('qr1').innerHTML = '';
-  document.getElementById('qr2').innerHTML = '';
-  new QRCode(document.getElementById('qr1'), {
-    text: controllerURL(1), width: 160, height: 160, colorDark: '#000', colorLight: '#fff'
-  });
-  if (mode === 2) {
-    new QRCode(document.getElementById('qr2'), {
-      text: controllerURL(2), width: 160, height: 160, colorDark: '#000', colorLight: '#fff'
-    });
+function joinConsole() {
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
+  if (code.length !== 4) {
+    document.getElementById('error-msg').textContent = '4-STELLIGEN CODE EINGEBEN';
+    return;
   }
+  // Phone joins as controller for that console
+  location.href = `controller.html?code=${code}`;
 }
 
-// ── Mode selection ────────────────────────────────────────────
-function selectMode(m) {
-  mode = m;
-  document.getElementById('screen-mode').style.display = 'none';
-  document.getElementById('screen-connect').style.display = 'flex';
-  if (mode === 1) {
-    document.getElementById('box2').style.display = 'none';
-    document.getElementById('connect-msg').textContent = 'Scanne den QR-Code mit deinem Handy';
-  }
-  initPeer();
-}
-
-function setStatus(player, text, ok) {
-  const el = document.getElementById(`status${player}`);
-  el.textContent = text;
-  el.classList.toggle('connected', ok);
-}
-
-function checkReady() {
-  if (mode === 2 && connected[1] && connected[2]) startCountdown();
-  if (mode === 1 && connected[1]) {
-    document.getElementById('btn-start').style.display = 'inline-block';
-  }
-}
-
-function launchGame() { startCountdown(); }
-
-function startCountdown() {
-  document.getElementById('btn-start').style.display = 'none';
-  state.countdown = 3;
-  const iv = setInterval(() => {
-    state.countdown--;
-    if (state.countdown <= 0) {
-      clearInterval(iv);
-      document.getElementById('screen-connect').style.display = 'none';
-      resetBall();
-      state.running = true;
-    }
-  }, 1000);
-}
-
-function pauseGame() {
-  state.running = false;
-  document.getElementById('screen-connect').style.display = 'flex';
-  buildQRCodes();
-}
-
-function showReconnectScreen(player) {
-  document.getElementById('connect-msg').textContent = `Spieler ${player} getrennt`;
-  document.getElementById('btn-start').style.display = 'none';
-  document.getElementById('box1').style.display = player === 1 ? 'flex' : 'none';
-  document.getElementById('box2').style.display = player === 2 ? 'flex' : 'none';
-  buildQRCodes();
-  document.getElementById('screen-connect').style.display = 'flex';
-}
-
-function showWin(player) {
-  state.running = false;
-  sndWin();
-  const name = mode === 1 && player === 2 ? 'KI' : `SPIELER ${player}`;
-  document.getElementById('win-title').textContent = `${name} GEWINNT`;
-  document.getElementById('win-scores').textContent = `${state.p1.score} : ${state.p2.score}`;
-  document.getElementById('screen-win').style.display = 'flex';
-}
-
-function restartGame() {
-  state.p1.score = 0; state.p2.score = 0;
-  state.p1.y = H/2 - PADDLE_H/2; state.p2.y = H/2 - PADDLE_H/2;
-  document.getElementById('screen-win').style.display = 'none';
-  startCountdown();
-}
-
-// ── Game logic ────────────────────────────────────────────────
-function resetBall() {
-  state.ball.x = W / 2; state.ball.y = H / 2;
-  const dir = Math.random() > 0.5 ? 1 : -1;
-  state.ball.vx = 5 * dir;
-  state.ball.vy = (Math.random() * 4 + 2) * (Math.random() > 0.5 ? 1 : -1);
-}
-
-function update() {
-  if (!state.running) return;
-
-  const j1 = joystick[1];
-  if (j1.active) {
-    state.p1.y = ((j1.y + 1) / 2) * (H - PADDLE_H);
-  } else if (gamepad[1].up)   state.p1.y -= PADDLE_SPEED;
-  else if (gamepad[1].down)   state.p1.y += PADDLE_SPEED;
-  state.p1.y = Math.max(0, Math.min(H - PADDLE_H, state.p1.y));
-
-  if (mode === 1) {
-    const diff = (state.ball.y - PADDLE_H / 2) - state.p2.y;
-    state.p2.y += Math.sign(diff) * Math.min(Math.abs(diff), AI_SPEED);
-  } else {
-    const j2 = joystick[2];
-    if (j2.active) {
-      state.p2.y = ((j2.y + 1) / 2) * (H - PADDLE_H);
-    } else if (gamepad[2].up)   state.p2.y -= PADDLE_SPEED;
-    else if (gamepad[2].down)   state.p2.y += PADDLE_SPEED;
-  }
-  state.p2.y = Math.max(0, Math.min(H - PADDLE_H, state.p2.y));
-
-  state.ball.x += state.ball.vx;
-  state.ball.y += state.ball.vy;
-
-  if (state.ball.y - BALL_R <= 0)   { state.ball.y = BALL_R;     state.ball.vy *= -1; sndWall(); }
-  if (state.ball.y + BALL_R >= H)   { state.ball.y = H - BALL_R; state.ball.vy *= -1; sndWall(); }
-
-  const p1x = 30 + PADDLE_W;
-  if (state.ball.vx < 0 && state.ball.x - BALL_R <= p1x && state.ball.x - BALL_R >= 28 &&
-      state.ball.y + BALL_R >= state.p1.y && state.ball.y - BALL_R <= state.p1.y + PADDLE_H) {
-    state.ball.x = p1x + BALL_R;
-    state.ball.vx = Math.abs(state.ball.vx) * 1.04;
-    state.ball.vy = ((state.ball.y - (state.p1.y + PADDLE_H/2)) / (PADDLE_H/2)) * 7;
-    sndPaddle();
-  }
-  const p2x = W - 30 - PADDLE_W;
-  if (state.ball.vx > 0 && state.ball.x + BALL_R >= p2x && state.ball.x + BALL_R <= W - 28 &&
-      state.ball.y + BALL_R >= state.p2.y && state.ball.y - BALL_R <= state.p2.y + PADDLE_H) {
-    state.ball.x = p2x - BALL_R;
-    state.ball.vx = -Math.abs(state.ball.vx) * 1.04;
-    state.ball.vy = ((state.ball.y - (state.p2.y + PADDLE_H/2)) / (PADDLE_H/2)) * 7;
-    sndPaddle();
-  }
-
-  const spd = Math.hypot(state.ball.vx, state.ball.vy);
-  if (spd > 18) { state.ball.vx = state.ball.vx / spd * 18; state.ball.vy = state.ball.vy / spd * 18; }
-
-  if (state.ball.x < 0)  { state.p2.score++; sndScore(); if (state.p2.score >= WIN_SCORE) { showWin(2); return; } resetBall(); }
-  if (state.ball.x > W)  { state.p1.score++; sndScore(); if (state.p1.score >= WIN_SCORE) { showWin(1); return; } resetBall(); }
-}
-
-function draw() {
-  ctx.fillStyle = '#0a0a0a';
-  ctx.fillRect(0, 0, W, H);
-
-  ctx.setLineDash([10, 15]);
-  ctx.strokeStyle = '#1e1e1e'; ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
-  ctx.setLineDash([]);
-
-  ctx.fillStyle = '#222'; ctx.font = 'bold 80px Courier New'; ctx.textAlign = 'center';
-  ctx.fillText(state.p1.score, W/2 - 120, 90);
-  ctx.fillText(state.p2.score, W/2 + 120, 90);
-
-  ctx.font = '13px Courier New'; ctx.fillStyle = '#333';
-  ctx.fillText('SPIELER 1', W/2 - 120, 110);
-  ctx.fillText(mode === 1 ? 'KI' : 'SPIELER 2', W/2 + 120, 110);
-
-  ctx.shadowBlur = 12; ctx.shadowColor = '#fff'; ctx.fillStyle = '#fff';
-  ctx.fillRect(30, state.p1.y, PADDLE_W, PADDLE_H);
-  ctx.fillRect(W - 30 - PADDLE_W, state.p2.y, PADDLE_W, PADDLE_H);
-
-  ctx.shadowBlur = 20;
-  ctx.beginPath(); ctx.arc(state.ball.x, state.ball.y, BALL_R, 0, Math.PI*2); ctx.fill();
-  ctx.shadowBlur = 0;
-
-  if (state.countdown > 0) {
-    ctx.fillStyle = 'rgba(255,255,255,0.08)';
-    ctx.font = 'bold 160px Courier New'; ctx.textAlign = 'center';
-    ctx.fillText(state.countdown, W/2, H/2 + 55);
-  }
-}
-
-function loop() { update(); draw(); requestAnimationFrame(loop); }
-loop();
+const codeInput = document.getElementById('join-code');
+codeInput.addEventListener('input', e => {
+  e.target.value = e.target.value.toUpperCase().replace(/[^A-Z2-9]/g, '');
+});
+codeInput.addEventListener('keypress', e => {
+  if (e.key === 'Enter') joinConsole();
+});
 </script>
 </body>
 </html>
