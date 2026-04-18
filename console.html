@@ -228,8 +228,8 @@ body::after {
 </head>
 <body>
 
-<!-- ── Setup-Screen ──────────────────────────────────── -->
-<div class="screen active" id="setup">
+<!-- ── Setup-Screen (QR-Codes) ───────────────────────── -->
+<div class="screen" id="setup">
   <h1>RETROCON</h1>
   <div id="qr-row">
     <div class="player-card">
@@ -243,17 +243,16 @@ body::after {
       <div class="status-dot" id="dot-2">OPTIONAL</div>
     </div>
   </div>
-  <div id="room-code">RAUM <span id="code-value">· · · ·</span></div>
-  <button id="start-btn" disabled>START</button>
+  <button class="menu-item" data-action="back" style="margin-top:10px">ZURÜCK <span class="badge">B</span></button>
 </div>
 
 <!-- ── Hauptmenü ─────────────────────────────────────── -->
-<div class="screen" id="main-menu">
-  <div class="room-badge">RAUM <span id="room-badge-code"></span></div>
+<div class="screen active" id="main-menu">
+  <h1 style="color:#4fc3f7;letter-spacing:0.5rem;font-size:clamp(1.2rem,3.5vw,2rem);text-shadow:0 0 40px rgba(79,195,247,0.9),0 0 80px rgba(79,195,247,0.4);margin-bottom:10px">RETROCON</h1>
   <div class="menu-section">SPIELE</div>
   <button class="menu-item selected" data-action="game" data-game="pong">PONG <span class="badge">1–2 SPIELER</span></button>
-  <div class="menu-section">OPTIONEN</div>
-  <button class="menu-item" data-action="settings">EINSTELLUNGEN <span class="badge">↗</span></button>
+  <div class="menu-section">CONTROLLER</div>
+  <button class="menu-item" data-action="connect">SPIELER VERBINDEN <span class="badge">↗</span></button>
 </div>
 
 <!-- ── Einstellungen ─────────────────────────────────── -->
@@ -300,9 +299,7 @@ const conns = new Map();
 const lastInput = new Map();
 const prevInput = new Map();
 
-// ── Screens ──────────────────────────────────────────────
-const screens = { setup: 'setup', menu: 'main-menu', settings: 'settings' };
-let activeScreen = 'setup';
+let activeScreen = 'main-menu';
 
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -321,8 +318,6 @@ function setupPeer(attempt = 0) {
     const url1 = `${base}controller.html?code=${code}&player=1`;
     const url2 = `${base}controller.html?code=${code}&player=2`;
 
-    document.getElementById('code-value').textContent = code.split('').join(' ');
-    document.getElementById('room-badge-code').textContent = code;
     document.getElementById('settings-badge-code').textContent = code;
 
     const qrOpts = { width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M };
@@ -360,36 +355,16 @@ function setupPeer(attempt = 0) {
 }
 
 function setPlayerConnected(player, on) {
-  ['', 's'].forEach(prefix => {
-    const wrap = document.getElementById(`qr-wrap-${prefix}${player}`);
-    const dot  = document.getElementById(`dot-${prefix}${player}`);
-    if (wrap) wrap.classList.toggle('connected', on);
-    if (dot) { dot.classList.toggle('connected', on); dot.textContent = on ? 'VERBUNDEN' : (player === 2 ? 'OPTIONAL' : 'WARTE…'); }
-  });
-  // START freischalten wenn P1 verbunden
-  const startBtn = document.getElementById('start-btn');
-  if (conns.size > 0) {
-    startBtn.disabled = false;
-    startBtn.classList.add('ready');
-  } else {
-    startBtn.disabled = true;
-    startBtn.classList.remove('ready');
-  }
+  const wrap = document.getElementById(`qr-wrap-${player}`);
+  const dot  = document.getElementById(`dot-${player}`);
+  if (wrap) wrap.classList.toggle('connected', on);
+  if (dot)  { dot.classList.toggle('connected', on); dot.textContent = on ? 'VERBUNDEN' : (player === 2 ? 'OPTIONAL' : 'WARTE…'); }
 }
 
 setupPeer();
 
-// ── START-Button ─────────────────────────────────────────
-document.getElementById('start-btn').addEventListener('click', () => {
-  if (conns.size > 0) showScreen('main-menu');
-});
-
 // ── Menü-Navigation ──────────────────────────────────────
-const menuItems = () => [...document.querySelectorAll('#main-menu .menu-item, #settings .menu-item')].filter(el => {
-  return document.getElementById('main-menu').classList.contains('active')
-    ? el.closest('#main-menu')
-    : el.closest('#settings');
-});
+const menuItems = () => [...document.querySelectorAll(`#${activeScreen} .menu-item`)];
 let menuIdx = 0;
 
 function highlightMenu() {
@@ -400,15 +375,10 @@ function highlightMenu() {
 function handleMenuInput(player, gp, prev) {
   if (player !== 1) return;
   const items = menuItems();
-  if (!items.length) {
-    // Setup-Screen: START per Controller
-    if (activeScreen === 'setup' && gp.start && !prev?.start && conns.size > 0) showScreen('main-menu');
-    return;
-  }
   if (gp.dpad.down && !prev?.dpad?.down) { menuIdx = (menuIdx + 1) % items.length; highlightMenu(); }
   if (gp.dpad.up   && !prev?.dpad?.up)   { menuIdx = (menuIdx - 1 + items.length) % items.length; highlightMenu(); }
   if (gp.a && !prev?.a) activateItem(items[menuIdx]);
-  if (gp.b && !prev?.b && activeScreen === 'settings') { showScreen('main-menu'); menuIdx = 0; highlightMenu(); }
+  if (gp.b && !prev?.b && activeScreen !== 'main-menu') { showScreen('main-menu'); menuIdx = 0; highlightMenu(); }
 }
 
 document.querySelectorAll('.menu-item').forEach((el, i) => {
@@ -421,9 +391,9 @@ document.querySelectorAll('.menu-item').forEach((el, i) => {
 function activateItem(el) {
   if (!el) return;
   const action = el.dataset.action;
-  if (action === 'game')     { menuIdx = 0; startGame(el.dataset.game); }
-  if (action === 'settings') { menuIdx = 0; showScreen('settings'); highlightMenu(); }
-  if (action === 'back')     { menuIdx = 1; showScreen('main-menu'); highlightMenu(); }
+  if (action === 'game')    { menuIdx = 0; startGame(el.dataset.game); }
+  if (action === 'connect') { menuIdx = 0; showScreen('setup'); highlightMenu(); }
+  if (action === 'back')    { menuIdx = 1; showScreen('main-menu'); highlightMenu(); }
 }
 
 highlightMenu();
