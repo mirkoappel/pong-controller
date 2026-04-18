@@ -80,7 +80,7 @@
 <body>
 
 <canvas id="canvas"></canvas>
-<div id="version">v0.1.0</div>
+<div id="version">v0.1.1</div>
 
 <div class="screen" id="screen-mode">
   <h1>PONG</h1>
@@ -277,20 +277,22 @@ function resetBall() {
 function update() {
   if (!state.running) return;
 
-  const jy1 = joystick[1].y;
-  if (Math.abs(jy1) > 0.1) state.p1.y += jy1 * PADDLE_SPEED;
-  else if (gamepad[1].up)   state.p1.y -= PADDLE_SPEED;
-  else if (gamepad[1].down) state.p1.y += PADDLE_SPEED;
+  const j1 = joystick[1];
+  if (j1.active) {
+    state.p1.y = ((j1.y + 1) / 2) * (H - PADDLE_H);
+  } else if (gamepad[1].up)   state.p1.y -= PADDLE_SPEED;
+  else if (gamepad[1].down)   state.p1.y += PADDLE_SPEED;
   state.p1.y = Math.max(0, Math.min(H - PADDLE_H, state.p1.y));
 
   if (mode === 1) {
     const diff = (state.ball.y - PADDLE_H / 2) - state.p2.y;
     state.p2.y += Math.sign(diff) * Math.min(Math.abs(diff), AI_SPEED);
   } else {
-    const jy2 = joystick[2].y;
-    if (Math.abs(jy2) > 0.1) state.p2.y += jy2 * PADDLE_SPEED;
-    else if (gamepad[2].up)   state.p2.y -= PADDLE_SPEED;
-    else if (gamepad[2].down) state.p2.y += PADDLE_SPEED;
+    const j2 = joystick[2];
+    if (j2.active) {
+      state.p2.y = ((j2.y + 1) / 2) * (H - PADDLE_H);
+    } else if (gamepad[2].up)   state.p2.y -= PADDLE_SPEED;
+    else if (gamepad[2].down)   state.p2.y += PADDLE_SPEED;
   }
   state.p2.y = Math.max(0, Math.min(H - PADDLE_H, state.p2.y));
 

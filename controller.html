@@ -259,7 +259,7 @@ body {
   <button id="scan-close">SCHLIESSEN</button>
 </div>
 
-<div id="version">v0.1.0</div>
+<div id="version">v0.1.1</div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
@@ -276,11 +276,11 @@ const connStatus = { set className(v) { led.classList.toggle('connected', v === 
 let conn = null;
 
 // ── Gamepad-State ────────────────────────────────────────
-const gp = { jx: 0, jy: 0, up: false, down: false, left: false, right: false, a: false, b: false, select: false, start: false };
+const gp = { jx: 0, jy: 0, jactive: false, up: false, down: false, left: false, right: false, a: false, b: false, select: false, start: false };
 
 function send() {
   if (conn?.open) conn.send({ type: 'gamepad', player,
-    joystick: { x: gp.jx, y: gp.jy },
+    joystick: { x: gp.jx, y: gp.jy, active: gp.jactive },
     dpad: { up: gp.up, down: gp.down, left: gp.left, right: gp.right },
     a: gp.a, b: gp.b, select: gp.select, start: gp.start });
 }
@@ -332,6 +332,7 @@ function joystickRelease() {
   joystickThumb.style.left = jCx + 'px';
   joystickThumb.style.top  = jCy + 'px';
   gp.jx = gp.jy = 0;
+  gp.jactive = false;
   gp.up = gp.down = gp.left = gp.right = false;
   send();
 }
@@ -341,6 +342,7 @@ joystickArea.addEventListener('touchstart', e => {
   if (joystickTouchId !== null) return;
   joystickTouchId = e.changedTouches[0].identifier;
   joystickArea.classList.add('dragging');
+  gp.jactive = true;
   joystickMove(e.changedTouches[0]);
 }, { passive: false });
 
