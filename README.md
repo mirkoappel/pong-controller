@@ -8,13 +8,17 @@ Browser-Spiel, das per Smartphone-Neigung gesteuert wird. Kein App-Download, kei
 
 ## Idee & Ziel
 
-Dieses Projekt ist der erste Schritt zu einem **Rennspiel**, bei dem zwei Spieler ihre Autos über Handy-Neigung (links/rechts kippen) steuern. Pong dient als technische Basis, um die Infrastruktur zu testen:
+Evaluation: **Smartphone als Browser-Gamepad** – wie gut funktioniert das in der Praxis?
 
-- Handy als Gamepad im Browser (ohne App)
-- Gyrosensor → Spielsteuerung
-- QR-Code als Verbindungsweg
+Pong ist der erste Testfall. Das Ziel ist nicht das Spiel selbst, sondern die Frage: Wie zuverlässig, wie intuitiv und wie reibungslos lässt sich ein Handy als Controller einsetzen – ohne App-Installation, ohne Konfiguration, einfach QR-Code scannen und losspielen?
 
-Das Rennspiel ist der geplante nächste Schritt sobald die Controller-Infrastruktur stabil läuft.
+Konkret wird evaluiert:
+- Verbindungsaufbau (QR → WebRTC → spielbereit, wie lange, wie stabil?)
+- Latenz (Neigung → Paddle-Reaktion, spürbare Verzögerung?)
+- Gyro-Steuerung (intuitiv? ermüdend? kalibrierungsbedarf?)
+- Gerätekompatibilität (iOS vs. Android, verschiedene Browser)
+
+Wenn das Konzept funktioniert, können weitere klassische Retro-Spiele (Breakout, Snake, Tetris, ...) mit derselben Controller-Infrastruktur umgesetzt werden.
 
 ---
 
@@ -125,13 +129,8 @@ GitHub Repo: https://github.com/mirkoappel/pong-controller
 
 ---
 
-## Nächste Schritte: Rennspiel
+## Nächste Schritte
 
-Geplante Erweiterung zu einem Rennspiel:
-- 2 Autos auf einer Rennstrecke
-- Steuerung: Handy links/rechts neigen = lenken
-- Gas evtl. automatisch oder per Knopf auf dem Handy-Screen
-- Perspektive: Top-Down 2D oder Pseudo-3D (offen)
-- Gleiche Infrastruktur (GitHub Pages + WebRTC) kann übernommen werden
-
-Die Controller-Architektur (`controller.html` mit PeerJS + Gyro) bleibt identisch – nur das Spielfeld (`index.html`) wird zum Rennspiel umgebaut.
+- Evaluation abschließen: Latenz messen, Geräte testen, Gyro-Mapping verfeinern
+- Weitere Retro-Spiele mit derselben Controller-Infrastruktur: Breakout, Snake, etc.
+- `controller.html` bleibt bei allen Spielen identisch – nur `index.html` wechselt
