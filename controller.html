@@ -420,30 +420,29 @@ setInterval(send, 33);
 const scanOverlay = document.getElementById('scan-overlay');
 const scanVideo   = document.getElementById('scan-video');
 const scanCanvas  = document.getElementById('scan-canvas');
-const scanCtx     = scanCanvas.getContext('2d');
+const scanCtx     = scanCanvas.getContext('2d', { willReadFrequently: true });
 let scanStream = null, scanRaf = null;
 
-document.getElementById('btn-scan').addEventListener('touchend', e => {
+// getUserMedia direkt im Event-Handler (iOS User-Gesture-Anforderung)
+document.getElementById('btn-scan').addEventListener('touchstart', e => {
   e.preventDefault();
-  startScan();
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+    .then(stream => {
+      scanStream = stream;
+      scanVideo.srcObject = stream;
+      return scanVideo.play();
+    })
+    .then(() => {
+      scanOverlay.classList.add('active');
+      scanLoop();
+    })
+    .catch(err => alert('Kamera nicht verfügbar: ' + err.message));
 }, { passive: false });
 
-document.getElementById('scan-close').addEventListener('touchend', e => {
+document.getElementById('scan-close').addEventListener('touchstart', e => {
   e.preventDefault();
   stopScan();
 }, { passive: false });
-
-async function startScan() {
-  try {
-    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-    scanVideo.srcObject = scanStream;
-    await scanVideo.play();
-    scanOverlay.classList.add('active');
-    scanLoop();
-  } catch {
-    alert('Kamera nicht verfügbar');
-  }
-}
 
 function stopScan() {
   scanOverlay.classList.remove('active');
@@ -454,18 +453,19 @@ function stopScan() {
 
 function scanLoop() {
   if (!scanStream) return;
-  if (scanVideo.readyState === scanVideo.HAVE_ENOUGH_DATA) {
+  if (scanVideo.readyState === 4) {
     scanCanvas.width  = scanVideo.videoWidth;
     scanCanvas.height = scanVideo.videoHeight;
     scanCtx.drawImage(scanVideo, 0, 0);
     const img  = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-    const code = jsQR(img.data, img.width, img.height);
+    const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
     if (code?.data) {
       try {
         const url = new URL(code.data);
         if (url.searchParams.has('peer')) {
           stopScan();
           location.href = code.data;
+          return;
         }
       } catch {}
     }
