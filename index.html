@@ -15,20 +15,65 @@ body {
   justify-content: center;
   font-family: 'Courier New', monospace;
   overflow: hidden;
-  cursor: pointer;
-  user-select: none;
-  gap: 40px;
-}
-body::after {
-  content: '';
-  position: fixed; inset: 0;
-  background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,0.2) 3px, rgba(0,0,0,0) 4px);
-  pointer-events: none;
 }
 
-/* ── Logo (erscheint nach Klick) ────────────────────────── */
-#logo { display: flex; opacity: 0; transition: opacity 0.2s; }
-#logo.visible { opacity: 1; }
+/* ── Phase 1 + 2: Terminal ──────────────────────────────── */
+#terminal {
+  width: min(90vw, 560px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.t-line {
+  font-size: clamp(0.6rem, 1.6vw, 0.8rem);
+  letter-spacing: 0.05rem;
+  color: #33ff33;
+  opacity: 0;
+  transition: opacity 0.1s;
+  white-space: pre;
+}
+.t-line.show { opacity: 1; }
+.t-line .ok  { color: #33ff33; }
+.t-line .dim { color: #1a7a1a; }
+
+#cursor {
+  display: inline-block;
+  width: 0.55em; height: 1em;
+  background: #33ff33;
+  vertical-align: middle;
+  animation: cblink 0.7s step-end infinite;
+  opacity: 0;
+}
+#cursor.show { opacity: 1; }
+@keyframes cblink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+#press-key {
+  margin-top: 28px;
+  font-size: clamp(0.65rem, 1.8vw, 0.85rem);
+  letter-spacing: 0.35rem;
+  color: #33ff33;
+  opacity: 0;
+  animation: none;
+  align-self: center;
+}
+#press-key.show {
+  opacity: 1;
+  animation: pblink 1s step-end infinite;
+}
+@keyframes pblink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* ── Phase 3: RETROCON-Logo ─────────────────────────────── */
+#logo-screen {
+  display: none;
+  position: fixed; inset: 0;
+  background: #000;
+  align-items: center;
+  justify-content: center;
+}
+#logo-screen.active { display: flex; }
+
+#logo { display: flex; }
 .letter {
   font-size: clamp(2.5rem, 9vw, 6rem);
   letter-spacing: 0.08em;
@@ -43,148 +88,82 @@ body::after {
   100% { opacity: 1; filter: brightness(1) blur(0); }
 }
 
-/* ── Konsole ────────────────────────────────────────────── */
-#console-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  transition: opacity 0.2s;
+/* CRT-Scanlines global */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,0.18) 3px, rgba(0,0,0,0) 4px);
+  pointer-events: none;
+  z-index: 99;
 }
-#console-wrap.hidden { opacity: 0; pointer-events: none; }
-
-#console {
-  width: clamp(260px, 55vw, 420px);
-  height: clamp(100px, 18vw, 155px);
-  background: linear-gradient(180deg, #2a2a2a 0%, #1e1e1e 100%);
-  border-radius: 12px 12px 22px 22px;
-  border: 2px solid #333;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 clamp(14px, 4vw, 28px);
-  position: relative;
-  transition: box-shadow 0.15s, border-color 0.15s;
-}
-#console:hover {
-  border-color: #444;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 20px rgba(79,195,247,0.08), inset 0 1px 0 rgba(255,255,255,0.06);
-}
-
-/* D-Pad */
-#dpad {
-  width: clamp(44px, 9vw, 66px);
-  height: clamp(44px, 9vw, 66px);
-  position: relative;
-  flex-shrink: 0;
-}
-.dpad-h, .dpad-v {
-  position: absolute;
-  background: #111;
-  border-radius: 2px;
-  border: 1px solid #2a2a2a;
-}
-.dpad-h { width: 100%; height: 33%; top: 33%; left: 0; }
-.dpad-v { height: 100%; width: 33%; left: 33%; top: 0; }
-
-/* Mitte: Screen + LED */
-#center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-#screen {
-  width: clamp(60px, 12vw, 96px);
-  height: clamp(36px, 7vw, 58px);
-  background: #050e12;
-  border-radius: 4px;
-  border: 2px solid #111;
-  box-shadow: inset 0 0 12px rgba(0,0,0,0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: clamp(0.35rem, 1vw, 0.5rem);
-  letter-spacing: 0.15rem;
-  color: #1a3a3a;
-}
-#power-led {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: #4caf50;
-  box-shadow: 0 0 8px #4caf50;
-  animation: ledblink 2s ease-in-out infinite;
-}
-@keyframes ledblink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-/* A/B Buttons */
-#buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: clamp(5px, 1.2vw, 9px);
-  flex-shrink: 0;
-}
-.btn {
-  width: clamp(20px, 4vw, 30px);
-  height: clamp(20px, 4vw, 30px);
-  border-radius: 50%;
-  background: #8C1F3E;
-  box-shadow: 0 3px 0 #5a1128;
-  display: flex; align-items: center; justify-content: center;
-  font-size: clamp(0.4rem, 0.9vw, 0.55rem);
-  font-weight: bold;
-  color: rgba(0,0,0,0.35);
-}
-.btn.empty { background: transparent; box-shadow: none; }
-
-/* Prompt */
-#prompt {
-  font-size: clamp(0.65rem, 2vw, 0.85rem);
-  letter-spacing: 0.35rem;
-  color: #aaa;
-  animation: blink 1.1s step-end infinite;
-}
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 </style>
 </head>
 <body>
 
-<div id="logo"></div>
+<!-- Phase 1 + 2 -->
+<div id="terminal">
+  <div id="press-key">PRESS ANY KEY TO START</div>
+  <div id="cursor"></div>
+</div>
 
-<div id="console-wrap">
-  <div id="console">
-    <div id="dpad">
-      <div class="dpad-h"></div>
-      <div class="dpad-v"></div>
-    </div>
-    <div id="center">
-      <div id="screen">RETROCON</div>
-      <div id="power-led"></div>
-    </div>
-    <div id="buttons">
-      <div class="btn empty"></div>
-      <div class="btn">A</div>
-      <div class="btn">B</div>
-      <div class="btn empty"></div>
-    </div>
-  </div>
-  <div id="prompt">KLICKEN ZUM STARTEN</div>
+<!-- Phase 3 -->
+<div id="logo-screen">
+  <div id="logo"></div>
 </div>
 
 <script>
 const WORD  = 'RETROCON';
 const DELAY = 110;
-const logo  = document.getElementById('logo');
-const wrap  = document.getElementById('console-wrap');
-let booted  = false;
+
+// ── Terminal-Zeilen ───────────────────────────────────────
+const LINES = [
+  { text: 'RETROCON OS  v0.3.0',              delay: 0 },
+  { text: 'COPYRIGHT (C) 2025 RETROCON',      delay: 300 },
+  { text: '',                                  delay: 550 },
+  { text: 'BIOS v2.1  CHECKING MEMORY... OK', delay: 650 },
+  { text: 'WEBRTC ENGINE........... LOADED',  delay: 950 },
+  { text: 'P2P BROKER.............. READY',   delay: 1200 },
+  { text: 'GAME MODULES............ 1 FOUND', delay: 1450 },
+  { text: 'CONTROLLER DRIVER....... ACTIVE',  delay: 1700 },
+  { text: '',                                  delay: 1950 },
+  { text: 'SYSTEM OK.',                        delay: 2050 },
+];
+const PRESS_DELAY = 2500;
+
+const terminal = document.getElementById('terminal');
+const cursor   = document.getElementById('cursor');
+const pressKey = document.getElementById('press-key');
+
+// Zeilen einfügen (vor press-key)
+LINES.forEach(({ text, delay }) => {
+  setTimeout(() => {
+    const el = document.createElement('div');
+    el.className = 't-line';
+    el.textContent = text;
+    terminal.insertBefore(el, pressKey);
+    requestAnimationFrame(() => el.classList.add('show'));
+  }, delay);
+});
+
+// Cursor + Press any key
+setTimeout(() => {
+  cursor.classList.add('show');
+}, PRESS_DELAY - 200);
+setTimeout(() => {
+  pressKey.classList.add('show');
+  enableStart();
+}, PRESS_DELAY);
+
+// ── Phase 3: Intro-Animation ──────────────────────────────
+const logoScreen = document.getElementById('logo-screen');
+const logoEl     = document.getElementById('logo');
+let started = false;
 
 WORD.split('').forEach(ch => {
   const s = document.createElement('span');
   s.className = 'letter';
   s.textContent = ch;
-  logo.appendChild(s);
+  logoEl.appendChild(s);
 });
 
 function playBoot(ctx) {
@@ -197,36 +176,36 @@ function playBoot(ctx) {
     osc.connect(g).connect(ctx.destination);
     osc.start(t); osc.stop(t + dur + 0.05);
   }
-  // Klick-Sound
-  tone(120, 0, 0.05, 0.2, 'sawtooth');
-  // Arpeggio
   [262,294,330,370,392,440,494,523].forEach((f, i) =>
-    tone(f, 0.12 + i * (DELAY / 1000), 0.16, 0.1)
+    tone(f, i * (DELAY / 1000), 0.16, 0.1)
   );
-  // Abschluss
-  const end = 0.12 + WORD.length * (DELAY / 1000);
+  const end = WORD.length * (DELAY / 1000);
   [523,659,784].forEach((f, i) => tone(f, end + i * 0.03, 0.9, 0.07));
 }
 
-function boot() {
-  if (booted) return;
-  booted = true;
+function startIntro() {
+  if (started) return;
+  started = true;
+
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
   playBoot(ctx);
-  wrap.classList.add('hidden');
-  setTimeout(() => {
-    logo.classList.add('visible');
-    logo.querySelectorAll('.letter').forEach((el, i) =>
-      setTimeout(() => el.classList.add('pop'), 120 + i * DELAY)
-    );
-  }, 150);
-  const total = 120 + WORD.length * DELAY + 1300;
+
+  logoScreen.classList.add('active');
+  terminal.style.display = 'none';
+
+  logoEl.querySelectorAll('.letter').forEach((el, i) =>
+    setTimeout(() => el.classList.add('pop'), i * DELAY)
+  );
+
+  const total = WORD.length * DELAY + 1300;
   setTimeout(() => { location.href = 'console.html'; }, total);
 }
 
-document.addEventListener('click', boot, { once: true });
-document.addEventListener('touchstart', e => { e.preventDefault(); boot(); }, { once: true, passive: false });
-document.addEventListener('keydown', boot, { once: true });
+function enableStart() {
+  document.addEventListener('keydown',    startIntro, { once: true });
+  document.addEventListener('click',      startIntro, { once: true });
+  document.addEventListener('touchstart', e => { e.preventDefault(); startIntro(); }, { once: true, passive: false });
+}
 </script>
 </body>
 </html>
