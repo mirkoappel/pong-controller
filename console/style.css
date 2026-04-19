@@ -167,6 +167,32 @@ body::after {
 }
 .status-dot.connected { color: #4caf50; }
 .status-dot.connected::before { background: #4caf50; box-shadow: 0 0 6px #4caf50; }
+.status-dot.local { color: #4fc3f7; }
+.status-dot.local::before { background: #4fc3f7; box-shadow: 0 0 6px #4fc3f7; }
+
+.kb-btn {
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #444;
+  font-family: inherit;
+  font-size: 0.6rem;
+  letter-spacing: 0.2rem;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.kb-btn:hover { border-color: #555; color: #888; }
+.kb-btn.active {
+  border-color: #4fc3f7;
+  color: #4fc3f7;
+  box-shadow: 0 0 8px rgba(79,195,247,0.25);
+}
+
+.qr-wrap.local {
+  border-color: #4fc3f7;
+  box-shadow: 0 0 20px rgba(79,195,247,0.2);
+}
 
 #room-code {
   font-size: 0.75rem;

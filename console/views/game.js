@@ -1,5 +1,5 @@
 // Game-View: Canvas, Loop, Start/Exit.
-import { conns, lastInput, code } from '../services/connection.js';
+import { conns, lastInput, code, localPlayers } from '../services/connection.js';
 import { getAudioContext } from '../services/audio.js';
 import { showScreen } from '../app.js';
 import { resetMenu } from './menu.js';
@@ -56,9 +56,14 @@ export function startGame(name) {
   resizeCanvas();
   keys.clear();
   prevKbGp = null;
-  currentGame = mod.create(ctx, canvas.width, canvas.height, Math.max(1, conns.size), {
+  const totalPlayers = new Set([...conns.keys(), ...localPlayers]).size;
+  currentGame = mod.create(ctx, canvas.width, canvas.height, Math.max(1, totalPlayers), {
     exit: exitGame,
-    getConns: () => conns,
+    getConns: () => {
+      const m = new Map(conns);
+      for (const p of localPlayers) if (!m.has(p)) m.set(p, 'keyboard');
+      return m;
+    },
     audioCtx: getAudioContext(),
     code
   });
@@ -66,9 +71,11 @@ export function startGame(name) {
   let last = performance.now();
   (function loop(now) {
     const dt = Math.min(50, now - last) / 1000; last = now;
-    const kbGp = makeKbGamepad();
-    currentGame.input?.(1, kbGp, prevKbGp);
-    prevKbGp = kbGp;
+    if (localPlayers.has(1)) {
+      const kbGp = makeKbGamepad();
+      currentGame.input?.(1, kbGp, prevKbGp);
+      prevKbGp = kbGp;
+    }
     currentGame.update?.(dt);
     currentGame.draw?.();
     rafId = requestAnimationFrame(loop);

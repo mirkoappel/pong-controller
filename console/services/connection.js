@@ -13,6 +13,10 @@ export const lastInput = new Map();
 export const prevInput = new Map();
 export let code = '';
 
+export const localPlayers = new Set();
+export const addLocalPlayer    = p => localPlayers.add(p);
+export const removeLocalPlayer = p => localPlayers.delete(p);
+
 let peer = null;
 const cb = { ready: () => {}, connect: () => {}, disconnect: () => {}, data: () => {} };
 
