@@ -112,7 +112,7 @@ function handleIgKey(e) {
     igMenuIdx = (igMenuIdx + 1) % IG_ITEMS.length;
     refreshIgItems(); e.preventDefault();
   } else if (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') {
-    selectIgMenuItem(); e.preventDefault();
+    e.preventDefault(); e.stopImmediatePropagation(); selectIgMenuItem();
   }
 }
 
