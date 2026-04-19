@@ -23,11 +23,11 @@ Controller verbinden sich zu `console-XXXX`. Bei Code-Kollision wird automatisch
 
 | Screen | Beschreibung |
 |---|---|
-| `setup` | Initaler Screen. Zeigt QR-Codes für P1 und P2. Hint: „SCANNE DEN QR-CODE MIT DEINEM HANDY" → nach Connect: „DRÜCKE A ZUM STARTEN" |
-| `main-menu` | Spielauswahl. Navigation per Joystick/D-Pad, Bestätigung per A. |
+| `setup` | Initialer Screen. Titel „VERBINDE DEIN SMARTPHONE ALS GAME-CONTROLLER", zwei QR-Codes (P1/P2), einheitlicher Status „WARTE AUF VERBINDUNG" → nach Connect: „DRÜCKE A ZUM STARTEN". |
+| `main-menu` | Horizontales Karussell mit Game-Cards + vertikale Legende. Joystick/D-Pad links/rechts wechselt Spiel, unten springt in die Legende, A aktiviert, B öffnet Setup. |
 | `game-view` | Laufendes Spiel im Canvas. SELECT → zurück zum Menü. |
 
-Menünavigation: jeder verbundene Controller kann das Menü steuern.
+Menünavigation: jeder verbundene Controller kann das Menü steuern. Die Game-Card-Vorschau kommt pro Spiel als `artSvg` aus dem Spielmodul.
 
 ## Bekannte Einschränkungen
 

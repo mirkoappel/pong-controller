@@ -4,11 +4,26 @@ Alle nennenswerten Änderungen an RETROCON. Format orientiert an [Keep a Changel
 
 ## [Unreleased]
 
+### Hinzugefügt
+- Hauptmenü: horizontales Spiele-Karussell mit Game-Cards (`artSvg` + `tagline` aus dem Spielmodul)
+- Menü-Legende „(A) SPIEL AUSWÄHLEN / (B) EINSTELLUNGEN" — B öffnet den Setup-Screen
+- Press Start 2P als Arcade-Schrift für Logo, Titel, Scores und Sieger-Screen (inkl. Canvas-Preload)
+- Pong: KI für jeden nicht verbundenen Spieler (auch P1, wenn nur P2 verbunden ist)
+
 ### Geändert
+- `console.html` → `console/index.html` (eigener Ordner)
+- Spiele in eigene Ordner: `games/pong.js` → `games/pong/pong.js`
+- Setup-Screen: neuer Titel „VERBINDE DEIN SMARTPHONE ALS GAME-CONTROLLER", einheitlicher Status „WARTE AUF VERBINDUNG" für beide Spieler, lesbarere SPIELER-Labels
+- Boot-Terminal: grüner Phosphor → RETROCON-Blau
+- Pong: größere Schläger mit mehr Rand-Abstand, Stil wie Menü-Vorschau, Countdown entfernt, neuer Sieger-Screen, SELECT-Hint weg
 - Controller Classic: A/B-Buttons nach links gerückt für bequemere Daumen-Reichweite
 - Controller Classic: Icon-Buttons (Home, Gear, Wifi) vertikal gestapelt statt horizontal
 - Controller Classic: Größen via `vmax`/`vmin` statt `vw`/`vh` für orientierungsunabhängige Skalierung
 - Portrait-Overlay im RETROCON-Stil (Gehäuse-Hintergrund, Crimson-Akzent, 3D-Phone-Icon, zweizeiliger zentrierter Text „SMARTPHONE DREHEN")
+
+### Entfernt
+- „SPIELER VERBINDEN"-Button im Hauptmenü (ersetzt durch B-Hint)
+- User-Flow-Diagramm aus README (volatil)
 
 ## [0.3.3]
 

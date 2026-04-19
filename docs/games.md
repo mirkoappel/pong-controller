@@ -6,7 +6,9 @@ Jedes Spiel lebt in einem eigenen Ordner unter `games/<name>/` und registriert s
 
 ```js
 window.RetroGames.pong = {
-  name: 'Pong',
+  name: 'PONG',
+  tagline: '1–2 SPIELER · CLASSIC ARCADE', // Untertitel auf der Menü-Karte
+  artSvg: `<svg ...>...</svg>`,            // Preview-Grafik für die Game-Card
   minPlayers: 1,
   maxPlayers: 2,
   create(ctx, W, H, numPlayers, api) {
@@ -31,6 +33,6 @@ SELECT auf einem Controller → `api.exit()` = zurück zum Menü.
 
 1. Ordner `games/<name>/` anlegen mit Entry-File (z.B. `<name>.js`), darin `window.RetroGames.<name> = { ... }` zuweisen
 2. Script-Tag in `console/index.html` ergänzen
-3. Im Hauptmenü auftauchende Liste aktualisieren (falls nicht automatisch)
+3. `artSvg` (inline SVG, viewBox 320×200) und `tagline` für die Menü-Karte setzen — das Karussell baut sich automatisch aus `window.RetroGames`
 
 Spiele bekommen Controller-Eingaben als neutrales [Gamepad-Protokoll](protocol.md) — die konkrete Controller-Variante ist für das Spiel unsichtbar.
