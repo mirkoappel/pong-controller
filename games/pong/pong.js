@@ -40,7 +40,6 @@ window.RetroGames.pong = {
       p1: { y: h / 2 - paddleH / 2, score: 0, joyActive: false },
       p2: { y: h / 2 - paddleH / 2, score: 0, joyActive: false },
       ball: { x: w / 2, y: h / 2, vx: 0, vy: 0 },
-      countdown: 3,
       countdownTimer: 0,
       running: false,
       winner: 0
@@ -80,8 +79,8 @@ window.RetroGames.pong = {
       state.ball.vy = Math.sin(angle) * speed;
     }
 
+    const START_DELAY = 0.8;
     function startRound() {
-      state.countdown = 3;
       state.countdownTimer = 0;
       state.running = false;
       state.winner = 0;
@@ -120,14 +119,10 @@ window.RetroGames.pong = {
       update(dt) {
         if (state.winner) return;
 
-        // Countdown
+        // Kurze Verzögerung vor Rundenstart
         if (!state.running) {
           state.countdownTimer += dt;
-          if (state.countdownTimer >= 1) {
-            state.countdownTimer = 0;
-            state.countdown--;
-            if (state.countdown <= 0) state.running = true;
-          }
+          if (state.countdownTimer >= START_DELAY) state.running = true;
           return;
         }
 
@@ -217,26 +212,25 @@ window.RetroGames.pong = {
         ctx.fill();
         ctx.shadowBlur = 0;
 
-        // Countdown
-        if (!state.running && !state.winner) {
-          ctx.fillStyle = '#fff';
-          ctx.font = `bold ${Math.floor(h * 0.3)}px Courier New`;
-          ctx.fillText(state.countdown, w / 2, h / 2 + h * 0.08);
-        }
-
-        // Sieg
+        // Sieg-Overlay
         if (state.winner) {
-          ctx.fillStyle = 'rgba(0,0,0,0.7)';
+          ctx.fillStyle = 'rgba(0,0,0,0.82)';
           ctx.fillRect(0, 0, w, h);
-          ctx.fillStyle = '#ffd54f';
-          ctx.font = `${Math.floor(h * 0.3)}px serif`;
-          ctx.fillText('🏆', w / 2, h / 2);
-          ctx.fillStyle = '#fff';
-          ctx.font = `bold ${Math.floor(h * 0.08)}px Courier New`;
-          ctx.fillText(`SPIELER ${state.winner} GEWINNT`, w / 2, h / 2 + h * 0.15);
-          ctx.fillStyle = '#888';
-          ctx.font = `${Math.floor(h * 0.04)}px Courier New`;
-          ctx.fillText('A / START = NEUSTART · SELECT = MENÜ', w / 2, h / 2 + h * 0.25);
+
+          ctx.fillStyle = ACCENT;
+          ctx.shadowColor = ACCENT;
+          ctx.shadowBlur = Math.round(w * 0.03);
+          ctx.textAlign = 'center';
+          ctx.font = `bold ${Math.floor(h * 0.12)}px Courier New`;
+          ctx.fillText(`SPIELER ${state.winner}`, w / 2, h * 0.42);
+
+          ctx.font = `${Math.floor(h * 0.06)}px Courier New`;
+          ctx.fillText('GEWINNT', w / 2, h * 0.52);
+          ctx.shadowBlur = 0;
+
+          ctx.fillStyle = '#555';
+          ctx.font = `${Math.floor(h * 0.035)}px Courier New`;
+          ctx.fillText('A · NEUSTART', w / 2, h * 0.72);
         }
       },
 
