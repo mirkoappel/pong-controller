@@ -235,31 +235,40 @@ body::after {
 .carousel-arrow.left  { left: 8px; }
 .carousel-arrow.right { right: 8px; }
 
-#play-hint {
+#menu-legend {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+  width: min(90vw, 320px);
+}
+.legend-item {
+  display: flex;
   align-items: center;
-  gap: 10px;
-  text-align: center;
+  gap: 0.7em;
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #888;
+  font-family: inherit;
+  font-size: 0.75rem;
+  letter-spacing: 0.3rem;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
-#play-hint .hint-primary {
+.legend-item:hover { color: #aaa; border-color: #444; }
+.legend-item.selected {
   color: #4fc3f7;
-  font-size: 0.8rem;
-  letter-spacing: 0.35rem;
-  animation: pulse 1.4s ease-in-out infinite;
+  border-color: #4fc3f7;
+  box-shadow: 0 0 16px rgba(79,195,247,0.3);
 }
-#play-hint .hint-secondary {
-  color: #555;
-  font-size: 0.65rem;
-  letter-spacing: 0.25rem;
-}
-#play-hint .btn-key {
+.legend-item .btn-key {
   display: inline-grid;
   place-items: center;
-  width: 1.4em; height: 1.4em;
+  width: 1.6em; height: 1.6em;
   border: 1px solid currentColor;
   border-radius: 50%;
-  margin-right: 0.6em;
   font-size: 0.85em;
   letter-spacing: 0;
   font-weight: bold;
@@ -379,9 +388,13 @@ body::after {
     <div id="carousel-track"></div>
     <div class="carousel-arrow right">▶</div>
   </div>
-  <div id="play-hint">
-    <div class="hint-primary"><span class="btn-key">A</span> SPIEL AUSWÄHLEN</div>
-    <div class="hint-secondary"><span class="btn-key">B</span> EINSTELLUNGEN</div>
+  <div id="menu-legend">
+    <button class="legend-item" data-action="game">
+      <span class="btn-key">A</span><span class="legend-label">SPIEL AUSWÄHLEN</span>
+    </button>
+    <button class="legend-item" data-action="settings">
+      <span class="btn-key">B</span><span class="legend-label">EINSTELLUNGEN</span>
+    </button>
   </div>
 </div>
 
@@ -529,10 +542,13 @@ gameIds.forEach(id => {
 });
 
 let carouselIdx = 0;
+let legendIdx = 0;
+let menuSection = 'carousel'; // 'carousel' | 'legend'
+const legendItems = () => [...document.querySelectorAll('#menu-legend .legend-item')];
 
 function highlightMenu() {
   const cards = [...track.children];
-  cards.forEach((el, i) => el.classList.toggle('selected', i === carouselIdx));
+  cards.forEach((el, i) => el.classList.toggle('selected', i === carouselIdx && menuSection === 'carousel'));
 
   const selected = cards[carouselIdx];
   if (selected) {
@@ -542,20 +558,47 @@ function highlightMenu() {
 
   carousel.classList.toggle('has-prev', carouselIdx > 0);
   carousel.classList.toggle('has-next', carouselIdx < cards.length - 1);
+
+  legendItems().forEach((el, i) => el.classList.toggle('selected', menuSection === 'legend' && i === legendIdx));
+}
+
+function activateLegend(action) {
+  if (action === 'game')     startGame(gameIds[carouselIdx]);
+  if (action === 'settings') showScreen('setup');
 }
 
 function handleMenuInput(player, gp, prev) {
   if (activeScreen === 'setup') {
-    if (gp.a && !prev?.a) { showScreen('main-menu'); carouselIdx = 0; highlightMenu(); }
+    if (gp.a && !prev?.a) { showScreen('main-menu'); menuSection = 'carousel'; carouselIdx = 0; highlightMenu(); }
     return;
   }
   if (activeScreen === 'main-menu') {
-    if (gp.dpad.right && !prev?.dpad?.right && carouselIdx < gameIds.length - 1) { carouselIdx++; highlightMenu(); }
-    if (gp.dpad.left  && !prev?.dpad?.left  && carouselIdx > 0)                 { carouselIdx--; highlightMenu(); }
-    if (gp.a && !prev?.a) startGame(gameIds[carouselIdx]);
-    if (gp.b && !prev?.b) showScreen('setup');
+    // Direkte Shortcuts immer verfügbar
+    if (gp.a && !prev?.a) {
+      if (menuSection === 'legend') activateLegend(legendItems()[legendIdx]?.dataset.action);
+      else startGame(gameIds[carouselIdx]);
+      return;
+    }
+    if (gp.b && !prev?.b) { showScreen('setup'); return; }
+
+    if (menuSection === 'carousel') {
+      if (gp.dpad.right && !prev?.dpad?.right && carouselIdx < gameIds.length - 1) { carouselIdx++; highlightMenu(); }
+      if (gp.dpad.left  && !prev?.dpad?.left  && carouselIdx > 0)                 { carouselIdx--; highlightMenu(); }
+      if (gp.dpad.down  && !prev?.dpad?.down) { menuSection = 'legend'; legendIdx = 0; highlightMenu(); }
+    } else {
+      const items = legendItems();
+      if (gp.dpad.down && !prev?.dpad?.down && legendIdx < items.length - 1) { legendIdx++; highlightMenu(); }
+      if (gp.dpad.up   && !prev?.dpad?.up) {
+        if (legendIdx > 0) { legendIdx--; highlightMenu(); }
+        else { menuSection = 'carousel'; highlightMenu(); }
+      }
+    }
   }
 }
+
+legendItems().forEach(el => {
+  el.addEventListener('click', () => activateLegend(el.dataset.action));
+});
 
 highlightMenu();
 window.addEventListener('resize', highlightMenu);
@@ -599,6 +642,7 @@ function exitGame() {
   currentGame = null;
   gameView.style.display = 'none';
   showScreen('main-menu');
+  menuSection = 'carousel';
   highlightMenu();
 }
 </script>
