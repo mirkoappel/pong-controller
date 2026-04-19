@@ -1,8 +1,13 @@
 // Game-View: Canvas, Loop, Start/Exit, In-Game-Overlay (Slide-Menü).
 import { conns, lastInput, code, localPlayers } from '../services/connection.js';
 import { getAudioContext } from '../services/audio.js';
-import { showScreen } from '../app.js';
 import { resetMenu, goToGame } from './menu.js';
+
+// Kein Import von app.js — DOM direkt manipulieren bricht die zirkuläre Abhängigkeit
+function showMainMenu() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('main-menu').classList.add('active');
+}
 
 let currentGame = null;
 let currentGameId = null;
@@ -233,6 +238,6 @@ export function exitGame() {
   paused = false;
   closeIgOverlay();
   gameView.style.display = 'none';
-  showScreen('main-menu');
+  showMainMenu();
   goToGame(lastId);
 }

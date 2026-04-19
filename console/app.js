@@ -13,6 +13,10 @@ export function showScreen(name) {
   activeScreen = name;
 }
 
+export function notifyScreenChange(name) {
+  activeScreen = name;
+}
+
 initBoot(
   () => { showScreen('main-menu'); resetMenu(); },
   () => {}
@@ -33,7 +37,8 @@ onData((player, gp, prev) => {
     if (gp.select && !prev?.select) { openIgMenu(); return; }
     cg.input?.(player, gp, prev);
   } else {
-    handleMenuInput(activeScreen, gp, prev);
+    const active = document.querySelector('.screen.active')?.id || activeScreen;
+    handleMenuInput(active, gp, prev);
   }
 });
 
