@@ -89,16 +89,39 @@ body::after {
   100% { opacity: 1; filter: brightness(1) blur(0); }
 }
 
-/* ── Setup-Screen ──────────────────────────────────────── */
+/* ── Setup-Overlay ─────────────────────────────────────── */
 #setup {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 40px;
   padding: 40px;
+  background: rgba(10,10,10,0.93);
+  backdrop-filter: blur(6px);
 }
+#setup.open { display: flex; }
 
-#setup h1 {
+#setup-close {
+  position: absolute;
+  top: 20px; right: 24px;
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #555;
+  font-family: inherit;
+  font-size: 0.65rem;
+  letter-spacing: 0.25rem;
+  padding: 8px 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+#setup-close:hover { border-color: #666; color: #aaa; }
+
+#setup > h1 {
   font-family: 'Press Start 2P', 'Courier New', monospace;
   font-size: clamp(1.6rem, 3.5vw, 2.6rem);
   letter-spacing: 0.1rem;

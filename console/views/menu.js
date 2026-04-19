@@ -1,6 +1,7 @@
 // Hauptmenü: Karussell + Navigation.
 import { startGame, exitGame, getCurrentGame } from './game.js';
 import { showScreen } from '../app.js';
+import { showSetup, hideSetup, isSetupOpen } from './setup.js';
 
 let track, carousel;
 let gameIds = [];
@@ -38,28 +39,25 @@ export function initMenu() {
       if (e.key === 'Escape') { exitGame(); e.preventDefault(); }
       return;
     }
+    if (isSetupOpen()) {
+      if (e.key === 'Escape') { hideSetup(); e.preventDefault(); }
+      return;
+    }
     const active = document.querySelector('.screen.active')?.id;
+    if (active !== 'main-menu') return;
 
-    if (active === 'main-menu') {
-      switch (e.key) {
-        case 'ArrowRight':
-          if (carouselIdx < gameIds.length - 1) { carouselIdx++; highlight(); }
-          e.preventDefault(); break;
-        case 'ArrowLeft':
-          if (carouselIdx > 0) { carouselIdx--; highlight(); }
-          e.preventDefault(); break;
-        case 'Enter': case ' ':
-          startGame(gameIds[carouselIdx]);
-          e.preventDefault(); break;
-        case 'Escape': case 'b': case 'B':
-          showScreen('setup'); e.preventDefault(); break;
-      }
-    } else if (active === 'setup') {
-      if (e.key === 'Escape' ||
-          ((e.key === 'Enter' || e.key === 'a' || e.key === 'A') &&
-           !document.activeElement?.classList.contains('mode-btn'))) {
-        showScreen('main-menu'); resetMenu(); e.preventDefault();
-      }
+    switch (e.key) {
+      case 'ArrowRight':
+        if (carouselIdx < gameIds.length - 1) { carouselIdx++; highlight(); }
+        e.preventDefault(); break;
+      case 'ArrowLeft':
+        if (carouselIdx > 0) { carouselIdx--; highlight(); }
+        e.preventDefault(); break;
+      case 'Enter': case ' ':
+        startGame(gameIds[carouselIdx]);
+        e.preventDefault(); break;
+      case 'Escape': case 'b': case 'B':
+        showSetup(); e.preventDefault(); break;
     }
   });
 }
@@ -82,14 +80,14 @@ export function resetMenu() {
 }
 
 export function handleMenuInput(activeScreen, gp, prev) {
-  if (activeScreen === 'setup') {
-    if (gp.a && !prev?.a) { showScreen('main-menu'); resetMenu(); }
+  if (isSetupOpen()) {
+    if (gp.a && !prev?.a) hideSetup();
     return;
   }
   if (activeScreen !== 'main-menu') return;
 
   if (gp.a && !prev?.a) { startGame(gameIds[carouselIdx]); return; }
-  if ((gp.b && !prev?.b) || (gp.select && !prev?.select)) { showScreen('setup'); return; }
+  if ((gp.b && !prev?.b) || (gp.select && !prev?.select)) { showSetup(); return; }
   if (gp.dpad.right && !prev?.dpad?.right && carouselIdx < gameIds.length - 1) { carouselIdx++; highlight(); }
   if (gp.dpad.left  && !prev?.dpad?.left  && carouselIdx > 0)                  { carouselIdx--; highlight(); }
 }
