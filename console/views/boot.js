@@ -7,13 +7,13 @@ const WORD = 'RETROCON';
 const LETTER_DELAY = 110;
 
 const LINES = [
-  { text: 'RETROCON OS  v0.3.0',              delay: 0 },
-  { text: 'COPYRIGHT (C) 2025 RETROCON',      delay: 300 },
+  { text: 'RETROCON OS  v0.4.0',              delay: 0 },
+  { text: 'COPYRIGHT (C) 2026 RETROCON',      delay: 300 },
   { text: '',                                 delay: 550 },
   { text: 'BIOS v2.1  CHECKING MEMORY... OK', delay: 650 },
   { text: 'WEBRTC ENGINE........... LOADED',  delay: 950 },
   { text: 'P2P BROKER.............. READY',   delay: 1200 },
-  { text: 'GAME MODULES............ 1 FOUND', delay: 1450 },
+  { text: 'GAME MODULES............ 2 FOUND', delay: 1450 },
   { text: 'CONTROLLER DRIVER....... ACTIVE',  delay: 1700 },
   { text: '',                                 delay: 1950 },
   { text: 'SYSTEM OK.',                       delay: 2050 },

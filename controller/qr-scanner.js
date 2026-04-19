@@ -86,21 +86,40 @@
       canvas.width  = video.videoWidth;
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0);
-      // Nur zentrierten Viewfinder-Bereich an jsQR übergeben, sonst kann ein
-      // QR am Bildrand (zweiter Spieler) statt des gezielten Codes gewinnen.
-      // 60% entspricht dem CSS-Frame (min(60vw, 60vh)).
-      const side = Math.floor(Math.min(canvas.width, canvas.height) * 0.6);
-      const x0   = Math.floor((canvas.width  - side) / 2);
-      const y0   = Math.floor((canvas.height - side) / 2);
-      const img  = ctx.getImageData(x0, y0, side, side);
+      // Nur den sichtbaren Viewfinder-Bereich an jsQR übergeben. Das Video
+      // wird via object-fit:cover skaliert+gecropt auf den Screen gemalt —
+      // wir rechnen das sichtbare Rechteck (min(60vw,60vh) CSS-px) exakt in
+      // Video-Pixel zurück, damit der Crop auf das passt, was der User sieht.
+      const sw = window.innerWidth, sh = window.innerHeight;
+      const scale = Math.max(sw / canvas.width, sh / canvas.height);
+      const dispW = canvas.width * scale, dispH = canvas.height * scale;
+      const offX  = (sw - dispW) / 2, offY = (sh - dispH) / 2;
+      const frameSide = Math.min(sw, sh) * 0.6;
+      const frameX = (sw - frameSide) / 2, frameY = (sh - frameSide) / 2;
+      const side = Math.max(1, Math.floor(frameSide / scale));
+      const x0   = Math.max(0, Math.floor((frameX - offX) / scale));
+      const y0   = Math.max(0, Math.floor((frameY - offY) / scale));
+      const sideX = Math.min(side, canvas.width  - x0);
+      const sideY = Math.min(side, canvas.height - y0);
+      const img  = ctx.getImageData(x0, y0, sideX, sideY);
       const qr   = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
       if (qr?.data) {
-        try {
-          const url = new URL(qr.data);
-          if (url.searchParams.has('code') || url.searchParams.has('peer')) {
-            hide(); location.href = qr.data; return;
-          }
-        } catch {}
+        // Mindest-Größe: erkannter Code muss ≥ 40% des Viewfinders sein.
+        // Sonst ist das Handy zu weit weg und evtl. sind beide Spieler-QRs
+        // im Bild → Auswahl würde zufällig sein.
+        const L = qr.location;
+        const qrSize = Math.max(
+          Math.hypot(L.topRightCorner.x - L.topLeftCorner.x, L.topRightCorner.y - L.topLeftCorner.y),
+          Math.hypot(L.bottomLeftCorner.x - L.topLeftCorner.x, L.bottomLeftCorner.y - L.topLeftCorner.y)
+        );
+        if (qrSize >= side * 0.4) {
+          try {
+            const url = new URL(qr.data);
+            if (url.searchParams.has('code') || url.searchParams.has('peer')) {
+              hide(); location.href = qr.data; return;
+            }
+          } catch {}
+        }
       }
     }
     raf = requestAnimationFrame(loop);

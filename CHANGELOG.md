@@ -2,10 +2,13 @@
 
 Alle nennenswerten Änderungen an RETROCON. Format orientiert an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
-## [Unreleased]
+## [0.4.0]
 
 ### Hinzugefügt
 - Neues Spiel: **Slime Volleyball** (1–2 Spieler, Joystick + A zum Springen, KI pro fehlendem Spieler)
+- Volleyball: Joystick steuert Slime-Position direkt (statt kraft-basiert), kritisch gedämpfte Interpolation
+- QR-Scanner: nur das sichtbare Viewfinder-Rechteck wird an jsQR übergeben (object-fit:cover korrekt zurückgerechnet) + Mindest-Größen-Check (40% der Framefläche), damit bei zwei sichtbaren QR-Codes nicht zufällig der falsche gewinnt
+- Controller: QR-Scanner in eigene Datei `controller/qr-scanner.js` (`window.QRScanner`)
 - SPA-Architektur: Boot + Setup + Menü + Game in einem Dokument — Audio-Gesture bleibt gültig
 - `services/audio.js`: globaler AudioContext, im Boot-Klick erzeugt, an Spiele via `api.audioCtx`
 - Console als ES-Module aufgeteilt (`services/` + `views/` + `app.js` + `style.css`)
