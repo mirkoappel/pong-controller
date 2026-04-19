@@ -149,7 +149,7 @@ window.RetroGames.volleyball = {
       update(dt) {
         if (state.winner) return;
 
-        const { groundY, slimeR, ballR, netW, netH, centerX } = dims();
+        const { groundY, slimeR, slimeFoot, ballR, netW, netH, centerX } = dims();
         const gSlime = h * 2.4;
         const gBall  = h * 1.4;
 
