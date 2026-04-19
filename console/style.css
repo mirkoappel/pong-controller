@@ -181,12 +181,12 @@ body::after {
 }
 
 #setup-hint {
-  font-size: 0.75rem;
-  letter-spacing: 0.15rem;
+  font-size: 1.4rem;
+  letter-spacing: 0.2rem;
   color: #555;
   text-align: center;
-  max-width: min(80vw, 500px);
-  line-height: 1.8;
+  max-width: min(80vw, 600px);
+  line-height: 1.6;
 }
 #setup-hint.ready {
   color: #4fc3f7;
