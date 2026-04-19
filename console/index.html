@@ -35,10 +35,13 @@ body::after {
 }
 
 #setup h1 {
-  font-size: clamp(1.4rem, 4vw, 2.5rem);
-  letter-spacing: 0.5rem;
+  font-size: clamp(1rem, 2.8vw, 1.8rem);
+  letter-spacing: 0.25rem;
   color: #4fc3f7;
   text-shadow: 0 0 40px rgba(79,195,247,0.9), 0 0 80px rgba(79,195,247,0.4);
+  text-align: center;
+  max-width: 90vw;
+  line-height: 1.4;
 }
 
 #qr-row {
@@ -224,7 +227,7 @@ body::after {
 
 <!-- ── Setup-Screen (QR-Codes) ───────────────────────── -->
 <div class="screen active" id="setup">
-  <h1>RETROCON</h1>
+  <h1>SMARTPHONE ALS GAME-CONTROLLER VERBINDEN</h1>
   <div id="qr-row">
     <div class="player-card">
       <div class="label">SPIELER 1</div>
@@ -237,7 +240,7 @@ body::after {
       <div class="status-dot" id="dot-2">OPTIONAL</div>
     </div>
   </div>
-  <div id="setup-hint">SCANNE DEN QR-CODE MIT DEINEM HANDY</div>
+  <div id="setup-hint"></div>
 </div>
 
 <!-- ── Hauptmenü ─────────────────────────────────────── -->
@@ -360,7 +363,7 @@ function setPlayerConnected(player, on) {
       hint.textContent = 'DRÜCKE A ZUM STARTEN';
     } else {
       hint.classList.remove('ready');
-      hint.textContent = 'SCANNE DEN QR-CODE MIT DEINEM HANDY';
+      hint.textContent = '';
     }
   }
 }
