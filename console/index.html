@@ -233,12 +233,12 @@ body::after {
     <div class="player-card">
       <div class="label">SPIELER 1</div>
       <div class="qr-wrap" id="qr-wrap-1"><div id="qr-1"></div></div>
-      <div class="status-dot" id="dot-1">WARTE…</div>
+      <div class="status-dot" id="dot-1">WARTE AUF VERBINDUNG</div>
     </div>
     <div class="player-card">
       <div class="label">SPIELER 2</div>
       <div class="qr-wrap" id="qr-wrap-2"><div id="qr-2"></div></div>
-      <div class="status-dot" id="dot-2">OPTIONAL</div>
+      <div class="status-dot" id="dot-2">WARTE AUF VERBINDUNG</div>
     </div>
   </div>
   <div id="setup-hint"></div>
@@ -356,7 +356,7 @@ function setPlayerConnected(player, on) {
   const wrap = document.getElementById(`qr-wrap-${player}`);
   const dot  = document.getElementById(`dot-${player}`);
   if (wrap) wrap.classList.toggle('connected', on);
-  if (dot)  { dot.classList.toggle('connected', on); dot.textContent = on ? 'VERBUNDEN' : (player === 2 ? 'OPTIONAL' : 'WARTE…'); }
+  if (dot)  { dot.classList.toggle('connected', on); dot.textContent = on ? 'VERBUNDEN' : 'WARTE AUF VERBINDUNG'; }
   const hint = document.getElementById('setup-hint');
   if (hint) {
     if (conns.size > 0) {
