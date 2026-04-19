@@ -317,29 +317,27 @@ window.RetroGames.volleyball = {
     }
 
     function runAI(p, side) {
-      const { groundY, slimeR, centerX } = dims();
+      const { groundY, slimeR, centerX, netW } = dims();
       const b = state.ball;
       const ownSide = side === 1 ? b.x < centerX : b.x > centerX;
       const dirToOpponent = side === 1 ? 1 : -1;
       const offset = slimeR * 0.6;
       const idle = side === 1 ? w * 0.25 : w * 0.75;
-      // Nicht zu nah ans Netz rangehen (sonst klemmt der Ball zwischen Slime und Netz)
-      const minX = side === 1 ? slimeR : centerX * 0.9;
-      const maxX = side === 1 ? centerX * 1.1 : w - slimeR;
-      // Aktiver Spielbereich: eigene Seite, aber mit Sicherheitsabstand zum Netz
-      const safeNet = side === 1 ? centerX - slimeR * 2 : centerX + slimeR * 2;
-      const inReach = side === 1 ? b.x < safeNet : b.x > safeNet;
 
-      const onGround = Math.abs(p.y - groundY) < 1;
       // In der Luft nicht eingreifen — Trajektorie aus dem Sprung bewahren
+      const onGround = Math.abs(p.y - groundY) < 1;
       if (!onGround) return;
 
-      const rawTarget = inReach ? (b.x - dirToOpponent * offset) : idle;
-      const targetX = Math.max(minX, Math.min(maxX, rawTarget));
+      // Ziel: auf eigener Seite unter den Ball mit Offset, sonst Idle-Position
+      const rawTarget = ownSide ? (b.x - dirToOpponent * offset) : idle;
+      // Nicht näher ans Netz als 1.2 Slime-Radien (sonst klemmt der Ball)
+      const netLimit = side === 1 ? centerX - slimeR * 1.2 - netW/2 : centerX + slimeR * 1.2 + netW/2;
+      const targetX = side === 1 ? Math.min(rawTarget, netLimit) : Math.max(rawTarget, netLimit);
       const dx = targetX - p.x;
       p.vx = Math.sign(dx) * Math.min(Math.abs(dx) * 4, w * 0.55);
 
-      if (inReach && b.y < groundY - slimeR * 1.3 && Math.abs(b.x - p.x) < slimeR * 1.6 && b.vy > 0) {
+      // Sprung, wenn Ball nahe genug und fällt
+      if (ownSide && b.y < groundY - slimeR * 1.3 && Math.abs(b.x - p.x) < slimeR * 1.8 && b.vy > 0) {
         p.vy = -h * 0.92;
         // Vorwärts-Impuls beim Absprung → Ball bekommt horizontale Energie Richtung Gegner
         p.vx = dirToOpponent * w * 0.5;
