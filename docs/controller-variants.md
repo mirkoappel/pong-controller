@@ -1,6 +1,6 @@
 # Controller-Varianten
 
-`controller/` ist ein Plugin-System für austauschbare Gamepad-Layouts. `core.js` kapselt alles Gemeinsame (Verbindung, Senden, Overlays), jede Variante liefert ihr eigenes Layout + ihre eigene Input-Logik.
+`controller/` ist ein Plugin-System für austauschbare Gamepad-Layouts. `core.js` kapselt Verbindung, Senden, Variant-Picker, Wake-Lock. `qr-scanner.js` übernimmt den QR-Scan (globales `window.QRScanner`, `core.js` delegiert dorthin). Jede Variante liefert ihr eigenes Layout + ihre eigene Input-Logik.
 
 ## Routing
 
@@ -25,7 +25,7 @@ Im Hochformat wird ein Hinweis-Overlay im RETROCON-Stil angezeigt (Gehäusefarbe
 ## Neue Variante hinzufügen
 
 1. Ordner `controller/variants/<id>/` anlegen mit `index.html`, `style.css`, `app.js`
-2. In `index.html` `core.js` + `app.js` laden, gewünschte Button-IDs ins DOM
+2. In `index.html` PeerJS, jsQR, `qr-scanner.js`, `core.js` + `app.js` laden (in der Reihenfolge), gewünschte Button-IDs ins DOM
 3. In `app.js`: `RC.bindBtn('id', 'key')` + eigene Joystick-/Touch-Logik, dann `RC.init()`
 4. Eintrag in `VARIANTS`-Array in `core.js` ergänzen
 

@@ -32,7 +32,8 @@ console/                SPA: Boot + Setup + Hauptmenü + Game-View in einem Doku
     menu.js             Karussell + Legende + Navigation
     game.js             Canvas + Game-Loop
 controller/             Smartphone-Controller (Plugin-System)
-  core.js               Shared: Verbindung, Gamepad-Protokoll, Overlays
+  core.js               Shared: Verbindung, Gamepad-Protokoll, Variant-Picker
+  qr-scanner.js         Kamera + jsQR (Viewfinder-Crop, Mindest-Größe)
   variants/classic/     Default-Variante
 games/                  Spielmodule (je Spiel ein Ordner)
   pong/
