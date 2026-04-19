@@ -40,8 +40,8 @@ window.RetroGames.volleyball = {
 
     const { groundY } = dims();
     const state = {
-      p1: { x: w * 0.25, y: groundY, vx: 0, vy: 0, score: 0, targetX: null, prevX: w * 0.25 },
-      p2: { x: w * 0.75, y: groundY, vx: 0, vy: 0, score: 0, targetX: null, prevX: w * 0.75 },
+      p1: { x: w * 0.25, y: groundY, vx: 0, vy: 0, score: 0, targetX: null, prevX: w * 0.25, joyY: 0, squash: 1, wasAirborne: false },
+      p2: { x: w * 0.75, y: groundY, vx: 0, vy: 0, score: 0, targetX: null, prevX: w * 0.75, joyY: 0, squash: 1, wasAirborne: false },
       ball: { x: w * 0.25, y: h * 0.35, vx: 0, vy: 0 },
       server: Math.random() < 0.5 ? 1 : 2,
       running: false,
@@ -130,8 +130,10 @@ window.RetroGames.volleyball = {
           const minX = player === 1 ? slimeR : centerX + slimeR + netW/2;
           const maxX = player === 1 ? centerX - slimeR - netW/2 : w - slimeR;
           p.targetX = minX + ((gp.joystick.x + 1) / 2) * (maxX - minX);
+          p.joyY = gp.joystick.y;
         } else {
           p.targetX = null;
+          p.joyY = 0;
           const dx = gp.dpad?.right ? 1 : gp.dpad?.left ? -1 : 0;
           p.vx = dx * w * 0.55;
         }
@@ -177,6 +179,22 @@ window.RetroGames.volleyball = {
           }
           // vx aus echter Positions-Delta (für Ball-Momentum bei Kollision)
           if (p.targetX != null) p.vx = (p.x - p.prevX) / Math.max(dt, 1/120);
+
+          // Blob-Squash: Ziel je nach Zustand, kritisch gedämpft
+          const onGround = Math.abs(p.y - groundY) < 1;
+          let targetSq = 1;
+          if (!onGround) {
+            targetSq = p.vy < 0 ? 1.25 : 1.12;           // Sprung: gestreckt
+          } else if (p.wasAirborne) {
+            targetSq = 0.62;                             // Landung: kurzer Squash-Impuls
+          } else if (p.joyY < -0.05) {
+            targetSq = 1 + Math.min(1, -p.joyY) * 0.22;  // Stick hoch → strecken
+          } else if (p.joyY > 0.05) {
+            targetSq = 1 - Math.min(1, p.joyY) * 0.28;   // Stick runter → stauchen
+          }
+          const sqSmooth = 1 - Math.exp(-dt * 14);
+          p.squash += (targetSq - p.squash) * sqSmooth;
+          p.wasAirborne = !onGround;
         }
 
         // Serve-Countdown
@@ -281,8 +299,8 @@ window.RetroGames.volleyball = {
         ctx.restore();
 
         // Slimes
-        drawSlime(state.p1.x, state.p1.y, slimeR, BLUE);
-        drawSlime(state.p2.x, state.p2.y, slimeR, PINK);
+        drawSlime(state.p1.x, state.p1.y, slimeR, BLUE, state.p1.squash);
+        drawSlime(state.p2.x, state.p2.y, slimeR, PINK, state.p2.squash);
 
         // Ball
         ctx.save();
@@ -319,13 +337,16 @@ window.RetroGames.volleyball = {
       destroy() { /* AudioContext gehört der Console */ }
     };
 
-    function drawSlime(x, y, r, color) {
+    function drawSlime(x, y, r, color, squash = 1) {
       ctx.save();
       ctx.fillStyle = color;
       ctx.shadowColor = color;
       ctx.shadowBlur = Math.round(w * 0.02);
+      // Volumen-erhaltender Squash: Höhe *sy, Breite *1/√sy, Pivot an der Basis.
+      ctx.translate(x, y);
+      ctx.scale(1 / Math.sqrt(squash), squash);
       ctx.beginPath();
-      ctx.arc(x, y, r, Math.PI, 0, false);
+      ctx.arc(0, 0, r, Math.PI, 0, false);
       ctx.closePath();
       ctx.fill();
       ctx.restore();
