@@ -23,8 +23,9 @@ console/                Host: Setup, Hauptmenü, Game-Loader
 controller/             Smartphone-Controller (Plugin-System)
   core.js               Shared: Verbindung, Gamepad-Protokoll, Overlays
   variants/classic/     Default-Variante
-games/                  Spielmodule
-  pong.js
+games/                  Spielmodule (je Spiel ein Ordner)
+  pong/
+    pong.js
 docs/                   Ausführliche Dokumentation
 CHANGELOG.md            Versions-Historie
 ```

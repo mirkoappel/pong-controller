@@ -1,6 +1,6 @@
 # Spiele
 
-Spiele liegen als einzelne Module unter `games/` und registrieren sich beim Laden an `window.RetroGames`.
+Jedes Spiel lebt in einem eigenen Ordner unter `games/<name>/` und registriert sich beim Laden an `window.RetroGames`. Der eigene Ordner erlaubt pro Spiel beliebig viele Module, Assets und Stylesheets.
 
 ## Game-Modul-Interface
 
@@ -29,7 +29,7 @@ SELECT auf einem Controller → `api.exit()` = zurück zum Menü.
 
 ## Neues Spiel hinzufügen
 
-1. `games/<name>.js` anlegen, `window.RetroGames.<name> = { ... }` zuweisen
+1. Ordner `games/<name>/` anlegen mit Entry-File (z.B. `<name>.js`), darin `window.RetroGames.<name> = { ... }` zuweisen
 2. Script-Tag in `console/index.html` ergänzen
 3. Im Hauptmenü auftauchende Liste aktualisieren (falls nicht automatisch)
 
