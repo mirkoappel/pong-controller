@@ -14,12 +14,12 @@ Controller verbinden sich zu `console-XXXX`. Bei Code-Kollision wird automatisch
 
 ```
 [Handy/Controller]  ──WebRTC P2P──►  [Laptop/Console]
-     controller/                        console.html
+     controller/                        console/
          ↑
     QR scannen
 ```
 
-## Screen-System (console.html)
+## Screen-System (console/)
 
 | Screen | Beschreibung |
 |---|---|

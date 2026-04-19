@@ -30,7 +30,7 @@ SELECT auf einem Controller → `api.exit()` = zurück zum Menü.
 ## Neues Spiel hinzufügen
 
 1. `games/<name>.js` anlegen, `window.RetroGames.<name> = { ... }` zuweisen
-2. Script-Tag in `console.html` ergänzen
+2. Script-Tag in `console/index.html` ergänzen
 3. Im Hauptmenü auftauchende Liste aktualisieren (falls nicht automatisch)
 
 Spiele bekommen Controller-Eingaben als neutrales [Gamepad-Protokoll](protocol.md) — die konkrete Controller-Variante ist für das Spiel unsichtbar.

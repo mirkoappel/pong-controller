@@ -18,8 +18,8 @@ Szenario: Alle sitzen vor einem Bildschirm. Laptopscreen = Spielfeld. 1–2 Smar
 ## Struktur
 
 ```
-index.html              Boot-Screen (Terminal → RETROCON-Intro → console.html)
-console.html            Host: Setup, Hauptmenü, Game-Loader
+index.html              Boot-Screen (Terminal → RETROCON-Intro → console/)
+console/                Host: Setup, Hauptmenü, Game-Loader
 controller/             Smartphone-Controller (Plugin-System)
   core.js               Shared: Verbindung, Gamepad-Protokoll, Overlays
   variants/classic/     Default-Variante

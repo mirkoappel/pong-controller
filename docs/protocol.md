@@ -23,4 +23,4 @@ Alle Controller-Varianten senden dasselbe Schema — das Protokoll ist stabil, a
 
 ## Spezial-Messages
 
-Neben `type: 'gamepad'` können Controller andere Nachrichten schicken (z.B. Verbindungs-Metadaten). Spiele ignorieren diese — nur `core.js`/`console.html` werten sie aus.
+Neben `type: 'gamepad'` können Controller andere Nachrichten schicken (z.B. Verbindungs-Metadaten). Spiele ignorieren diese — nur `core.js`/`console/` werten sie aus.
