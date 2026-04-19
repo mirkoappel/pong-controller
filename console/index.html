@@ -236,18 +236,22 @@ body::after {
 .carousel-arrow.right { right: 8px; }
 
 #play-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+#play-hint .hint-primary {
   color: #4fc3f7;
   font-size: 0.8rem;
   letter-spacing: 0.35rem;
   animation: pulse 1.4s ease-in-out infinite;
 }
-#main-menu.on-actions #play-hint { display: none; }
-
-#menu-actions {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  justify-content: center;
+#play-hint .hint-secondary {
+  color: #555;
+  font-size: 0.65rem;
+  letter-spacing: 0.25rem;
 }
 
 .room-badge {
@@ -364,9 +368,9 @@ body::after {
     <div id="carousel-track"></div>
     <div class="carousel-arrow right">▶</div>
   </div>
-  <div id="play-hint">DRÜCKE A ZUM STARTEN</div>
-  <div id="menu-actions">
-    <button class="menu-item" data-action="connect">SPIELER VERBINDEN <span class="badge">↗</span></button>
+  <div id="play-hint">
+    <div class="hint-primary">DRÜCKE A ZUM STARTEN</div>
+    <div class="hint-secondary">DRÜCKE B FÜR EINSTELLUNGEN</div>
   </div>
 </div>
 
@@ -514,14 +518,11 @@ gameIds.forEach(id => {
 });
 
 let carouselIdx = 0;
-let actionIdx = 0;
-let menuSection = 'carousel'; // 'carousel' | 'actions'
 
 function highlightMenu() {
   const cards = [...track.children];
   cards.forEach((el, i) => el.classList.toggle('selected', i === carouselIdx));
 
-  // Track-Position: ausgewählte Karte zentrieren
   const selected = cards[carouselIdx];
   if (selected) {
     const offset = selected.offsetLeft + selected.offsetWidth / 2 - carousel.clientWidth / 2;
@@ -530,53 +531,19 @@ function highlightMenu() {
 
   carousel.classList.toggle('has-prev', carouselIdx > 0);
   carousel.classList.toggle('has-next', carouselIdx < cards.length - 1);
-
-  const actions = [...document.querySelectorAll('#menu-actions .menu-item')];
-  actions.forEach((el, i) => el.classList.toggle('selected', menuSection === 'actions' && i === actionIdx));
-  document.getElementById('main-menu').classList.toggle('on-actions', menuSection === 'actions');
-
-  // Karten-Selected-Ring entfernen wenn Fokus auf Actions
-  if (menuSection === 'actions') cards.forEach(el => el.classList.remove('selected'));
 }
 
 function handleMenuInput(player, gp, prev) {
   if (activeScreen === 'setup') {
-    if (gp.a && !prev?.a) { showScreen('main-menu'); menuSection = 'carousel'; carouselIdx = 0; highlightMenu(); }
+    if (gp.a && !prev?.a) { showScreen('main-menu'); carouselIdx = 0; highlightMenu(); }
     return;
   }
   if (activeScreen === 'main-menu') {
-    if (menuSection === 'carousel') {
-      if (gp.dpad.right && !prev?.dpad?.right && carouselIdx < gameIds.length - 1) { carouselIdx++; highlightMenu(); }
-      if (gp.dpad.left  && !prev?.dpad?.left  && carouselIdx > 0)                 { carouselIdx--; highlightMenu(); }
-      if (gp.dpad.down  && !prev?.dpad?.down) { menuSection = 'actions'; actionIdx = 0; highlightMenu(); }
-      if (gp.a && !prev?.a) startGame(gameIds[carouselIdx]);
-    } else {
-      const actions = [...document.querySelectorAll('#menu-actions .menu-item')];
-      if (gp.dpad.up    && !prev?.dpad?.up)    { menuSection = 'carousel'; highlightMenu(); }
-      if (gp.dpad.right && !prev?.dpad?.right && actionIdx < actions.length - 1) { actionIdx++; highlightMenu(); }
-      if (gp.dpad.left  && !prev?.dpad?.left  && actionIdx > 0)                  { actionIdx--; highlightMenu(); }
-      if (gp.a && !prev?.a) activateItem(actions[actionIdx]);
-    }
-    return;
+    if (gp.dpad.right && !prev?.dpad?.right && carouselIdx < gameIds.length - 1) { carouselIdx++; highlightMenu(); }
+    if (gp.dpad.left  && !prev?.dpad?.left  && carouselIdx > 0)                 { carouselIdx--; highlightMenu(); }
+    if (gp.a && !prev?.a) startGame(gameIds[carouselIdx]);
+    if (gp.b && !prev?.b) showScreen('setup');
   }
-  // generische Menüs (z.B. settings): klassische vertikale Navigation
-  const items = [...document.querySelectorAll(`#${activeScreen} .menu-item`)];
-  if (!items.length) return;
-  if (gp.dpad.down && !prev?.dpad?.down) { actionIdx = (actionIdx + 1) % items.length; items.forEach((el,i)=>el.classList.toggle('selected',i===actionIdx)); }
-  if (gp.dpad.up   && !prev?.dpad?.up)   { actionIdx = (actionIdx - 1 + items.length) % items.length; items.forEach((el,i)=>el.classList.toggle('selected',i===actionIdx)); }
-  if (gp.a && !prev?.a) activateItem(items[actionIdx]);
-  if (gp.b && !prev?.b) { showScreen('main-menu'); menuSection = 'carousel'; highlightMenu(); }
-}
-
-document.querySelectorAll('#menu-actions .menu-item, #settings .menu-item').forEach(el => {
-  el.addEventListener('click', () => activateItem(el));
-});
-
-function activateItem(el) {
-  if (!el) return;
-  const action = el.dataset.action;
-  if (action === 'connect') { showScreen('setup'); }
-  if (action === 'back')    { showScreen('main-menu'); menuSection = 'carousel'; carouselIdx = 0; highlightMenu(); }
 }
 
 highlightMenu();
@@ -621,7 +588,7 @@ function exitGame() {
   currentGame = null;
   gameView.style.display = 'none';
   showScreen('main-menu');
-  menuSection = 'carousel'; highlightMenu();
+  highlightMenu();
 }
 </script>
 </body>
