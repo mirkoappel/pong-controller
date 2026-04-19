@@ -1,14 +1,23 @@
 // QR-Scanner für den Controller
-// Vollbild-Overlay mit Kamera-Stream, jsQR-Decode im zentrierten Viewfinder.
-// Bei Treffer auf gültige Raum-URL → Navigation zu dieser URL.
+// Tap-to-Scan: Kamera läuft live, aber dekodiert wird erst bei Druck auf
+// den SCAN-Button (wie Auslöser). Pro Tap werden bis zu 10 Frames probiert,
+// bevorzugt mit nativem BarcodeDetector, sonst Fallback auf jsQR. Kein Crop,
+// kein Größen-Filter — User zielt selbst.
 //
 // API:
 //   QRScanner.show()   Kamera starten + Overlay zeigen
 //   QRScanner.hide()   Overlay schließen + Kamera freigeben
 
 (function () {
-  let stream = null, raf = null;
-  let overlay, video, canvas, ctx;
+  let stream = null;
+  let overlay, video, canvas, ctx, hint, scanBtn;
+  let detector = null;
+  let scanning = false;
+
+  if ('BarcodeDetector' in window) {
+    try { detector = new window.BarcodeDetector({ formats: ['qr_code'] }); }
+    catch { detector = null; }
+  }
 
   function ensureDom() {
     if (overlay) return;
@@ -18,7 +27,8 @@
       <video id="rc-scan-video" playsinline muted></video>
       <canvas id="rc-scan-canvas"></canvas>
       <div id="rc-scan-frame"></div>
-      <div id="rc-scan-hint">QR-Code des Raums scannen</div>
+      <div id="rc-scan-hint">QR-CODE IM RAHMEN — DANN SCAN DRÜCKEN</div>
+      <button id="rc-scan-btn">SCAN</button>
       <button id="rc-scan-close">SCHLIESSEN</button>
     `;
     document.body.appendChild(overlay);
@@ -41,8 +51,21 @@
       #rc-scan-hint {
         position: relative; z-index: 2; margin-top: 20px;
         font-size: 0.7rem; letter-spacing: 0.1rem;
-        color: rgba(255,255,255,0.5); font-family: 'Courier New', monospace;
+        color: rgba(255,255,255,0.6); font-family: 'Courier New', monospace;
+        text-align: center; padding: 0 20px;
       }
+      #rc-scan-btn {
+        position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+        z-index: 3;
+        width: 84px; height: 84px; border-radius: 50%;
+        background: #fff; border: 4px solid rgba(255,255,255,0.4);
+        box-shadow: 0 0 0 3px #000;
+        font-family: 'Courier New', monospace;
+        font-size: 0.75rem; letter-spacing: 0.1rem; font-weight: bold;
+        color: #000; cursor: pointer; touch-action: none;
+      }
+      #rc-scan-btn:active { transform: translateX(-50%) scale(0.94); }
+      #rc-scan-btn.busy { background: #888; color: #222; }
       #rc-scan-close {
         position: absolute; top: 16px; right: 16px; z-index: 3;
         background: rgba(0,0,0,0.6); border: 1px solid #333; color: #aaa;
@@ -55,12 +78,17 @@
     `;
     document.head.appendChild(style);
 
-    video  = document.getElementById('rc-scan-video');
-    canvas = document.getElementById('rc-scan-canvas');
-    ctx    = canvas.getContext('2d', { willReadFrequently: true });
+    video   = document.getElementById('rc-scan-video');
+    canvas  = document.getElementById('rc-scan-canvas');
+    ctx     = canvas.getContext('2d', { willReadFrequently: true });
+    hint    = document.getElementById('rc-scan-hint');
+    scanBtn = document.getElementById('rc-scan-btn');
 
     document.getElementById('rc-scan-close').addEventListener('pointerdown', e => {
       e.preventDefault(); hide();
+    });
+    scanBtn.addEventListener('pointerdown', e => {
+      e.preventDefault(); runScan();
     });
   }
 
@@ -68,61 +96,66 @@
     ensureDom();
     navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
       .then(s => { stream = s; video.srcObject = s; return video.play(); })
-      .then(() => { overlay.classList.add('active'); loop(); })
+      .then(() => {
+        overlay.classList.add('active');
+        hint.textContent = 'QR-CODE IM RAHMEN — DANN SCAN DRÜCKEN';
+      })
       .catch(err => alert('Kamera nicht verfügbar: ' + err.message));
   }
 
   function hide() {
     if (!overlay) return;
     overlay.classList.remove('active');
-    cancelAnimationFrame(raf);
     stream?.getTracks().forEach(t => t.stop());
     stream = null;
+    scanning = false;
+    scanBtn?.classList.remove('busy');
   }
 
-  function loop() {
-    if (!stream) return;
-    if (video.readyState === 4) {
-      canvas.width  = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
-      // Nur den sichtbaren Viewfinder-Bereich an jsQR übergeben. Das Video
-      // wird via object-fit:cover skaliert+gecropt auf den Screen gemalt —
-      // wir rechnen das sichtbare Rechteck (min(60vw,60vh) CSS-px) exakt in
-      // Video-Pixel zurück, damit der Crop auf das passt, was der User sieht.
-      const sw = window.innerWidth, sh = window.innerHeight;
-      const scale = Math.max(sw / canvas.width, sh / canvas.height);
-      const dispW = canvas.width * scale, dispH = canvas.height * scale;
-      const offX  = (sw - dispW) / 2, offY = (sh - dispH) / 2;
-      const frameSide = Math.min(sw, sh) * 0.6;
-      const frameX = (sw - frameSide) / 2, frameY = (sh - frameSide) / 2;
-      const side = Math.max(1, Math.floor(frameSide / scale));
-      const x0   = Math.max(0, Math.floor((frameX - offX) / scale));
-      const y0   = Math.max(0, Math.floor((frameY - offY) / scale));
-      const sideX = Math.min(side, canvas.width  - x0);
-      const sideY = Math.min(side, canvas.height - y0);
-      const img  = ctx.getImageData(x0, y0, sideX, sideY);
-      const qr   = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
-      if (qr?.data) {
-        // Mindest-Größe: erkannter Code muss ≥ 40% des Viewfinders sein.
-        // Sonst ist das Handy zu weit weg und evtl. sind beide Spieler-QRs
-        // im Bild → Auswahl würde zufällig sein.
-        const L = qr.location;
-        const qrSize = Math.max(
-          Math.hypot(L.topRightCorner.x - L.topLeftCorner.x, L.topRightCorner.y - L.topLeftCorner.y),
-          Math.hypot(L.bottomLeftCorner.x - L.topLeftCorner.x, L.bottomLeftCorner.y - L.topLeftCorner.y)
-        );
-        if (qrSize >= side * 0.4) {
-          try {
-            const url = new URL(qr.data);
-            if (url.searchParams.has('code') || url.searchParams.has('peer')) {
-              hide(); location.href = qr.data; return;
-            }
-          } catch {}
-        }
-      }
+  async function tryDecode() {
+    if (video.readyState !== 4) return null;
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+    if (detector) {
+      try {
+        const codes = await detector.detect(canvas);
+        if (codes.length) return codes[0].rawValue;
+      } catch {}
     }
-    raf = requestAnimationFrame(loop);
+    try {
+      const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const qr = jsQR(img.data, img.width, img.height, { inversionAttempts: 'attemptBoth' });
+      if (qr?.data) return qr.data;
+    } catch {}
+    return null;
+  }
+
+  function isRoomUrl(data) {
+    try {
+      const url = new URL(data);
+      return url.searchParams.has('code') || url.searchParams.has('peer');
+    } catch { return false; }
+  }
+
+  async function runScan() {
+    if (scanning || !stream) return;
+    scanning = true;
+    scanBtn.classList.add('busy');
+    hint.textContent = 'SCANNE...';
+    for (let i = 0; i < 10; i++) {
+      const data = await tryDecode();
+      if (data && isRoomUrl(data)) {
+        hint.textContent = 'ERKANNT ✓';
+        hide();
+        location.href = data;
+        return;
+      }
+      await new Promise(r => setTimeout(r, 40));
+    }
+    scanning = false;
+    scanBtn.classList.remove('busy');
+    hint.textContent = 'NICHT ERKANNT — ZIELEN, NOCHMAL TIPPEN';
   }
 
   window.QRScanner = { show, hide };
