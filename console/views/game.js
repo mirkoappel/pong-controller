@@ -8,22 +8,30 @@ let currentGame = null;
 let rafId = null;
 let canvas, ctx, gameView;
 
-// Keyboard-P1-Input: Pfeiltasten = Joystick, A/Space = A, D = B
+// Tastatur-Input: P1 = WASD + Space(A) + Q(B), P2 = Pfeiltasten + Enter(A) + Shift(B)
 const keys = new Set();
-let prevKbGp = null;
+const prevKbGp = {};
 
-function makeKbGamepad() {
-  const up    = keys.has('ArrowUp');
-  const down  = keys.has('ArrowDown');
-  const left  = keys.has('ArrowLeft');
-  const right = keys.has('ArrowRight');
+const KB = {
+  1: { up:'KeyW', down:'KeyS', left:'KeyA', right:'KeyD', a:['Space'],            b:['KeyQ'] },
+  2: { up:'ArrowUp', down:'ArrowDown', left:'ArrowLeft', right:'ArrowRight',
+       a:['Enter','Numpad0'], b:['ShiftLeft','ShiftRight'] },
+};
+
+function makeKbGamepad(player) {
+  const m = KB[player] || KB[1];
+  const up    = keys.has(m.up);
+  const down  = keys.has(m.down);
+  const left  = keys.has(m.left);
+  const right = keys.has(m.right);
   const x = right ? 1 : left ? -1 : 0;
   const y = down  ? 1 : up   ? -1 : 0;
   return {
+    type: 'keyboard',
     joystick: { x, y, active: up || down || left || right },
     dpad:     { up, down, left, right },
-    a:      keys.has('KeyA') || keys.has('Space'),
-    b:      keys.has('KeyD'),
+    a:      m.a.some(k => keys.has(k)),
+    b:      m.b.some(k => keys.has(k)),
     select: false,
     start:  false,
   };
@@ -37,8 +45,13 @@ export function initGame() {
     resizeCanvas();
     currentGame?.resize?.(canvas.width, canvas.height);
   });
-  window.addEventListener('keydown', e => { if (currentGame) keys.add(e.code); });
-  window.addEventListener('keyup',   e => keys.delete(e.code));
+  window.addEventListener('keydown', e => {
+    if (!currentGame) return;
+    keys.add(e.code);
+    if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))
+      e.preventDefault();
+  });
+  window.addEventListener('keyup', e => keys.delete(e.code));
 }
 
 export const getCurrentGame = () => currentGame;
@@ -55,7 +68,7 @@ export function startGame(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   resizeCanvas();
   keys.clear();
-  prevKbGp = null;
+  for (const k in prevKbGp) delete prevKbGp[k];
   const totalPlayers = new Set([...conns.keys(), ...localPlayers]).size;
   currentGame = mod.create(ctx, canvas.width, canvas.height, Math.max(1, totalPlayers), {
     exit: exitGame,
@@ -71,10 +84,12 @@ export function startGame(name) {
   let last = performance.now();
   (function loop(now) {
     const dt = Math.min(50, now - last) / 1000; last = now;
-    if (localPlayers.has(1)) {
-      const kbGp = makeKbGamepad();
-      currentGame.input?.(1, kbGp, prevKbGp);
-      prevKbGp = kbGp;
+    for (const p of localPlayers) {
+      if (!conns.has(p)) {
+        const kbGp = makeKbGamepad(p);
+        currentGame.input?.(p, kbGp, prevKbGp[p] || null);
+        prevKbGp[p] = kbGp;
+      }
     }
     currentGame.update?.(dt);
     currentGame.draw?.();

@@ -1,51 +1,16 @@
-// Setup-Screen: QR-Codes + Player-Status.
+// Setup-Screen: QR-Codes + Player-Status + Mensch/KI-Modus.
 import { conns, localPlayers, addLocalPlayer, removeLocalPlayer } from '../services/connection.js';
 
-export function renderQRs({ url1, url2 }) {
-  const qrOpts = { width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M };
-  new QRCode(document.getElementById('qr-1'), { ...qrOpts, text: url1 });
-  new QRCode(document.getElementById('qr-2'), { ...qrOpts, text: url2 });
-}
-
-// TASTATUR-Buttons
-[1, 2].forEach(p => {
-  document.getElementById(`kb-btn-${p}`)?.addEventListener('click', () => toggleLocal(p));
-});
-
-// Tastaturkürzel: "1" / "2" wenn Setup-Screen aktiv
-window.addEventListener('keydown', e => {
-  if (!document.getElementById('setup').classList.contains('active')) return;
-  if (e.key === '1') toggleLocal(1);
-  if (e.key === '2') toggleLocal(2);
-});
-
-function toggleLocal(player) {
-  if (conns.has(player)) return; // echter Controller hat Vorrang
-  if (localPlayers.has(player)) {
-    removeLocalPlayer(player);
-  } else {
-    addLocalPlayer(player);
+function setMode(player, mode) {
+  const toggle = document.getElementById(`mode-${player}`);
+  if (toggle) {
+    toggle.querySelectorAll('.mode-btn').forEach(btn =>
+      btn.classList.toggle('active', btn.dataset.mode === mode)
+    );
   }
-  refreshCard(player);
+  if (mode === 'human') addLocalPlayer(player);
+  else                  removeLocalPlayer(player);
   refreshHint();
-}
-
-function refreshCard(player) {
-  const isLocal = localPlayers.has(player);
-  const isConn  = conns.has(player);
-  const wrap = document.getElementById(`qr-wrap-${player}`);
-  const dot  = document.getElementById(`dot-${player}`);
-  const btn  = document.getElementById(`kb-btn-${player}`);
-  if (wrap) {
-    wrap.classList.toggle('connected', isConn);
-    wrap.classList.toggle('local', isLocal && !isConn);
-  }
-  if (dot) {
-    dot.classList.toggle('connected', isConn);
-    dot.classList.toggle('local', isLocal && !isConn);
-    dot.textContent = isConn ? 'VERBUNDEN' : isLocal ? 'TASTATUR' : 'WARTE AUF VERBINDUNG';
-  }
-  if (btn) btn.classList.toggle('active', isLocal);
 }
 
 function refreshHint() {
@@ -56,19 +21,38 @@ function refreshHint() {
   hint.textContent = hasAny ? 'DRÜCKE A ZUM STARTEN' : '';
 }
 
+// Default: P1 = Mensch (Tastatur aktiv), P2 = KI
+setMode(1, 'human');
+setMode(2, 'ai');
+
+// Klick auf Mode-Buttons
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const player = parseInt(btn.closest('[id^="mode-"]').id.replace('mode-', ''));
+    setMode(player, btn.dataset.mode);
+  });
+});
+
+// Tastaturkürzel im Setup-Screen: "1" und "2" wechseln Modus
+window.addEventListener('keydown', e => {
+  if (!document.getElementById('setup').classList.contains('active')) return;
+  if (e.key === '1') setMode(1, localPlayers.has(1) ? 'ai' : 'human');
+  if (e.key === '2') setMode(2, localPlayers.has(2) ? 'ai' : 'human');
+});
+
+export function renderQRs({ url1, url2 }) {
+  const qrOpts = { width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M };
+  new QRCode(document.getElementById('qr-1'), { ...qrOpts, text: url1 });
+  new QRCode(document.getElementById('qr-2'), { ...qrOpts, text: url2 });
+}
+
 export function setPlayerConnected(player, on) {
-  if (on && localPlayers.has(player)) {
-    removeLocalPlayer(player); // echter Controller übernimmt
-  }
   const wrap = document.getElementById(`qr-wrap-${player}`);
   const dot  = document.getElementById(`dot-${player}`);
-  const btn  = document.getElementById(`kb-btn-${player}`);
-  if (wrap) { wrap.classList.toggle('connected', on); wrap.classList.remove('local'); }
+  if (wrap) wrap.classList.toggle('connected', on);
   if (dot)  {
     dot.classList.toggle('connected', on);
-    dot.classList.remove('local');
     dot.textContent = on ? 'VERBUNDEN' : 'WARTE AUF VERBINDUNG';
   }
-  if (btn) btn.classList.remove('active');
   refreshHint();
 }

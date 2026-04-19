@@ -37,8 +37,8 @@ window.RetroGames.pong = {
 
     const { paddleH } = dims();
     const state = {
-      p1: { y: h / 2 - paddleH / 2, score: 0, joyActive: false },
-      p2: { y: h / 2 - paddleH / 2, score: 0, joyActive: false },
+      p1: { y: h / 2 - paddleH / 2, vy: 0, score: 0, joyActive: false },
+      p2: { y: h / 2 - paddleH / 2, vy: 0, score: 0, joyActive: false },
       ball: { x: w / 2, y: h / 2, vx: 0, vy: 0 },
       countdownTimer: 0,
       running: false,
@@ -98,11 +98,18 @@ window.RetroGames.pong = {
       input(player, gp, prev) {
         const p = player === 1 ? state.p1 : state.p2;
         const { paddleH } = dims();
-        if (gp.joystick.active) {
-          p.joyActive = true;
-          p.y = ((gp.joystick.y + 1) / 2) * (h - paddleH);
+        if (gp.type === 'keyboard') {
+          // Tastatur: kraftbasierte Bewegung (Geschwindigkeit statt absoluter Position)
+          const KSPEED = h * 0.75;
+          p.vy = gp.dpad.up ? -KSPEED : gp.dpad.down ? KSPEED : 0;
         } else {
-          p.joyActive = false;
+          p.vy = 0;
+          if (gp.joystick.active) {
+            p.joyActive = true;
+            p.y = ((gp.joystick.y + 1) / 2) * (h - paddleH);
+          } else {
+            p.joyActive = false;
+          }
         }
         // SELECT = zurück zum Home
         if (gp.select && !(prev?.select)) api.exit();
@@ -126,6 +133,10 @@ window.RetroGames.pong = {
         }
 
         const { paddleW, paddleH, margin, ballR } = dims();
+
+        // Tastatur-Paddle-Bewegung (vy wird in input() gesetzt)
+        state.p1.y += state.p1.vy * dt;
+        state.p2.y += state.p2.vy * dt;
 
         // KI für jeden nicht verbundenen Spieler
         const conns = api.getConns();
