@@ -123,12 +123,19 @@ window.RetroGames.volleyball = {
         }
 
         const p = player === 1 ? state.p1 : state.p2;
-        const { groundY } = dims();
+        const { groundY, slimeR, netW, centerX } = dims();
 
-        const dx = gp.joystick?.active ? gp.joystick.x
-                 : gp.dpad?.right ? 1
-                 : gp.dpad?.left ? -1 : 0;
-        p.vx = dx * w * 0.55;
+        // Joystick → direkte Position in eigener Spielfeldhälfte
+        if (gp.joystick?.active) {
+          const minX = player === 1 ? slimeR : centerX + slimeR + netW/2;
+          const maxX = player === 1 ? centerX - slimeR - netW/2 : w - slimeR;
+          const prevX = p.x;
+          p.x = minX + ((gp.joystick.x + 1) / 2) * (maxX - minX);
+          p.vx = (p.x - prevX) / Math.max(1/120, 1/60); // momentum-Schätzung für Ball-Kollision
+        } else {
+          const dx = gp.dpad?.right ? 1 : gp.dpad?.left ? -1 : 0;
+          p.vx = dx * w * 0.55;
+        }
 
         if (gp.a && !prev?.a && Math.abs(p.y - groundY) < 1) {
           p.vy = -h * 0.95;
