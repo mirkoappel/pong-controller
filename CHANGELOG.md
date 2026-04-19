@@ -2,6 +2,20 @@
 
 Alle nennenswerten Änderungen an RETROCON. Format orientiert an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
+## [0.6.0]
+
+### Hinzugefügt
+- Neues Spiel: **DUST RUSH** (1–2 Spieler) — Staubsauger-Roboter-Wettbewerb in der Vogelperspektive
+  - **Panzersteuerung**: Joystick Y = vorwärts/rückwärts, X = Rotation
+  - **Gitterboden**: Spielfeld aus quadratischen Sektoren (Sektorgröße = Roboterdurchmesser); wer den letzten Krümel eines Sektors einsammelt bekommt +1 Punkt; gereinigte Sektoren färben sich in Spielerfarbe
+  - **175 Partikel** zufällig verteilt; Behälter füllt sich pro Partikel, Akku entlädt sich kontinuierlich
+  - **Ladestation** (Mitte unten): lädt Akku und leert Behälter gleichzeitig, automatisches Andocken per Nähe
+  - **HUD**: Akku-Bar (Spielerfarbe) + Behälter-Bar (Amber) + Score + Timer; beide Bars blinken rot bei kritischem Stand
+  - **KI-Gegner** mit SEEK/DOCK-Zustandsautomat und Stuck-Recovery für Solo-Modus
+  - **Sounds**: Collect-Blip, 3-Ton-Sektor-Chime, Dock-Sound, Warnpiepser (Akku/Behälter), Win-Fanfare, Unentschieden-Akkord
+  - Spielende: Timer (90 s) oder alle Partikel gesammelt; Siegerscreen mit zwei Zeilen + Score-Anzeige
+- Boot-Terminal: Game-Module-Counter von 2 auf 3 aktualisiert
+
 ## [0.5.0]
 
 ### Hinzugefügt

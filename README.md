@@ -42,6 +42,8 @@ games/                  Spielmodule (je Spiel ein Ordner)
     pong.js
   volleyball/
     volleyball.js
+  vacuum/
+    vacuum.js
 docs/                   Ausführliche Dokumentation
 CHANGELOG.md            Versions-Historie
 ```
@@ -83,6 +85,16 @@ git commit -m "Beschreibung"
 git push
 # GitHub Pages aktualisiert automatisch nach ~30 Sekunden
 ```
+
+---
+
+## Spiele
+
+| Spiel | Spieler | Beschreibung |
+|---|---|---|
+| **PONG** | 1–2 | Klassisches Paddlespiel; Joystick steuert Paddle, erster auf 10 Punkte gewinnt |
+| **VOLLEYBALL** | 1–2 | Slime-Volleyball; Joystick bewegt Slime, A springt, erster auf 7 Punkte gewinnt |
+| **DUST RUSH** | 1–2 | Staubsauger-Roboter; Panzersteuerung, Sektoren sammeln, Ladestation anfahren, meiste Punkte in 90 s gewinnt |
 
 ---
 
