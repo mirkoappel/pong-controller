@@ -148,11 +148,13 @@ SELECT auf einem Controller → `api.exit()` = zurück zum Menü.
 
 Layout (Querformat):
 - **Links:** Analoger Joystick (fixer Mittelpunkt, Rücksprung)
-- **Mitte unten:** Home (= SELECT, zurück ins Menü) · Gear (Variant-Picker) · Wifi (QR-Scan)
-- **Rechts:** A- und B-Button in Mulden, diagonal versetzt
+- **Mitte:** Home (= SELECT, zurück ins Menü), Gear (Variant-Picker), Wifi (QR-Scan) — vertikal gestapelt
+- **Rechts:** A- und B-Button in Mulden, diagonal versetzt; leicht nach links gerückt für bequeme Daumen-Reichweite
 - **LED oben rechts:** Grün = verbunden, Rot = getrennt
 
 Wifi-Icon leuchtet zusätzlich grün wenn verbunden — doppelte Status-Anzeige ohne Platz zu kosten.
+
+Im Hochformat wird ein Hinweis-Overlay im RETROCON-Stil angezeigt (Gehäusefarbe, Akzent-Glow, animiertes Phone-Icon), das zum Drehen auffordert — der Controller ist für Querformat ausgelegt.
 
 ### Neue Variante hinzufügen
 
