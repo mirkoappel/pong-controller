@@ -1,13 +1,10 @@
 // Setup-Screen: QR-Codes + Player-Status.
 import { conns } from '../services/connection.js';
 
-export function renderQRs({ url1, url2, code }) {
+export function renderQRs({ url1, url2 }) {
   const qrOpts = { width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M };
-  new QRCode(document.getElementById('qr-1'),  { ...qrOpts, text: url1 });
-  new QRCode(document.getElementById('qr-2'),  { ...qrOpts, text: url2 });
-  new QRCode(document.getElementById('qr-s1'), { ...qrOpts, text: url1 });
-  new QRCode(document.getElementById('qr-s2'), { ...qrOpts, text: url2 });
-  document.getElementById('settings-badge-code').textContent = code;
+  new QRCode(document.getElementById('qr-1'), { ...qrOpts, text: url1 });
+  new QRCode(document.getElementById('qr-2'), { ...qrOpts, text: url2 });
 }
 
 export function setPlayerConnected(player, on) {
