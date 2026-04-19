@@ -41,8 +41,8 @@ window.RetroGames.volleyball = {
 
     const { groundY } = dims();
     const state = {
-      p1: { x: w * 0.25, y: groundY, vx: 0, vy: 0, score: 0, targetX: null, prevX: w * 0.25, joyY: 0, squash: 1, wasAirborne: false },
-      p2: { x: w * 0.75, y: groundY, vx: 0, vy: 0, score: 0, targetX: null, prevX: w * 0.75, joyY: 0, squash: 1, wasAirborne: false },
+      p1: { x: w * 0.25, y: groundY, vx: 0, vy: 0, score: 0, targetX: null, prevX: w * 0.25, joyY: 0, squash: 1, wasAirborne: false, footNow: 0 },
+      p2: { x: w * 0.75, y: groundY, vx: 0, vy: 0, score: 0, targetX: null, prevX: w * 0.75, joyY: 0, squash: 1, wasAirborne: false, footNow: 0 },
       ball: { x: w * 0.25, y: h * 0.35, vx: 0, vy: 0 },
       server: Math.random() < 0.5 ? 1 : 2,
       running: false,
@@ -181,19 +181,26 @@ window.RetroGames.volleyball = {
           // vx aus echter Positions-Delta (für Ball-Momentum bei Kollision)
           if (p.targetX != null) p.vx = (p.x - p.prevX) / Math.max(dt, 1/120);
 
+          // Fuß-Rundung: am Boden flache Basis, in der Luft voll rund (Tropfen)
+          const air = Math.min(1, Math.max(0, (groundY - p.y) / slimeR));
+          p.footNow = slimeFoot + (slimeR - slimeFoot) * air;
+
           // Blob-Squash: Ziel je nach Zustand, kritisch gedämpft
           const onGround = Math.abs(p.y - groundY) < 1;
           let targetSq = 1;
           if (!onGround) {
-            targetSq = p.vy < 0 ? 1.25 : 1.12;           // Sprung: gestreckt
+            // In der Luft: deutlich runder/eiförmig, im Fall etwas weniger
+            targetSq = p.vy < 0 ? 1.45 : 1.25;
           } else if (p.wasAirborne) {
-            targetSq = 0.62;                             // Landung: kurzer Squash-Impuls
+            // Aufprall: harter Squash direkt setzen, damit der Impuls sichtbar ist
+            p.squash = 0.5;
+            targetSq = 1;                                // sofort wieder Richtung normal
           } else if (p.joyY < -0.05) {
             targetSq = 1 + Math.min(1, -p.joyY) * 0.22;  // Stick hoch → strecken
           } else if (p.joyY > 0.05) {
             targetSq = 1 - Math.min(1, p.joyY) * 0.28;   // Stick runter → stauchen
           }
-          const sqSmooth = 1 - Math.exp(-dt * 14);
+          const sqSmooth = 1 - Math.exp(-dt * 10);
           p.squash += (targetSq - p.squash) * sqSmooth;
           p.wasAirborne = !onGround;
         }
@@ -233,9 +240,9 @@ window.RetroGames.volleyball = {
           sndNet();
         }
 
-        // Slime-Kollisionen (nur obere Halbkugel, Dome-Mittelpunkt um slimeFoot angehoben)
+        // Slime-Kollisionen (nur obere Halbkugel, Dome-Mittelpunkt dynamisch angehoben)
         [state.p1, state.p2].forEach(p => {
-          const cy = p.y - slimeFoot;
+          const cy = p.y - p.footNow;
           const dx = b.x - p.x;
           const dy = b.y - cy;
           const dist = Math.hypot(dx, dy);
@@ -301,8 +308,8 @@ window.RetroGames.volleyball = {
         ctx.restore();
 
         // Slimes
-        drawSlime(state.p1.x, state.p1.y, slimeR, slimeFoot, BLUE, state.p1.squash);
-        drawSlime(state.p2.x, state.p2.y, slimeR, slimeFoot, PINK, state.p2.squash);
+        drawSlime(state.p1.x, state.p1.y, slimeR, state.p1.footNow || slimeFoot, BLUE, state.p1.squash);
+        drawSlime(state.p2.x, state.p2.y, slimeR, state.p2.footNow || slimeFoot, PINK, state.p2.squash);
 
         // Ball
         ctx.save();
