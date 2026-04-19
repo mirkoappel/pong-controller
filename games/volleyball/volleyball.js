@@ -40,8 +40,8 @@ window.RetroGames.volleyball = {
 
     const { groundY } = dims();
     const state = {
-      p1: { x: w * 0.25, y: groundY, vx: 0, vy: 0, score: 0 },
-      p2: { x: w * 0.75, y: groundY, vx: 0, vy: 0, score: 0 },
+      p1: { x: w * 0.25, y: groundY, vx: 0, vy: 0, score: 0, targetX: null, prevX: w * 0.25 },
+      p2: { x: w * 0.75, y: groundY, vx: 0, vy: 0, score: 0, targetX: null, prevX: w * 0.75 },
       ball: { x: w * 0.25, y: h * 0.35, vx: 0, vy: 0 },
       server: Math.random() < 0.5 ? 1 : 2,
       running: false,
@@ -125,14 +125,13 @@ window.RetroGames.volleyball = {
         const p = player === 1 ? state.p1 : state.p2;
         const { groundY, slimeR, netW, centerX } = dims();
 
-        // Joystick → direkte Position in eigener Spielfeldhälfte
+        // Joystick → Zielposition in eigener Spielfeldhälfte (Interpolation in update)
         if (gp.joystick?.active) {
           const minX = player === 1 ? slimeR : centerX + slimeR + netW/2;
           const maxX = player === 1 ? centerX - slimeR - netW/2 : w - slimeR;
-          const prevX = p.x;
-          p.x = minX + ((gp.joystick.x + 1) / 2) * (maxX - minX);
-          p.vx = (p.x - prevX) / Math.max(1/120, 1/60); // momentum-Schätzung für Ball-Kollision
+          p.targetX = minX + ((gp.joystick.x + 1) / 2) * (maxX - minX);
         } else {
+          p.targetX = null;
           const dx = gp.dpad?.right ? 1 : gp.dpad?.left ? -1 : 0;
           p.vx = dx * w * 0.55;
         }
@@ -159,7 +158,14 @@ window.RetroGames.volleyball = {
         // Slimes: Bewegung, Gravitation, Boden
         for (let i = 0; i < 2; i++) {
           const p = i === 0 ? state.p1 : state.p2;
-          p.x += p.vx * dt;
+          p.prevX = p.x;
+          if (p.targetX != null) {
+            // Kritisch gedämpfte Annäherung ans Joystick-Ziel
+            const smooth = 1 - Math.exp(-dt * 22);
+            p.x += (p.targetX - p.x) * smooth;
+          } else {
+            p.x += p.vx * dt;
+          }
           p.y += p.vy * dt;
           p.vy += gSlime * dt;
           if (p.y > groundY) { p.y = groundY; p.vy = 0; }
@@ -169,6 +175,8 @@ window.RetroGames.volleyball = {
           } else {
             p.x = Math.max(centerX + slimeR + netW/2, Math.min(w - slimeR, p.x));
           }
+          // vx aus echter Positions-Delta (für Ball-Momentum bei Kollision)
+          if (p.targetX != null) p.vx = (p.x - p.prevX) / Math.max(dt, 1/120);
         }
 
         // Serve-Countdown
