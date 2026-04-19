@@ -18,8 +18,19 @@ Szenario: Alle sitzen vor einem Bildschirm. Laptopscreen = Spielfeld. 1–2 Smar
 ## Struktur
 
 ```
-index.html              Boot-Screen (Terminal → RETROCON-Intro → console/)
-console/                Host: Setup, Hauptmenü, Game-Loader
+index.html              Redirect → console/
+console/                SPA: Boot + Setup + Hauptmenü + Game-View in einem Dokument
+  index.html            Shell mit Screen-Containern
+  style.css             Alle Styles
+  app.js                Orchestrator (Screen-Routing, Verdrahtung)
+  services/
+    connection.js       PeerJS, Raum-Code, Controller-Pool
+    audio.js            Globaler AudioContext (im Boot-Gesture erzeugt)
+  views/
+    boot.js             Terminal-Intro + RETROCON-Animation
+    setup.js            QR-Codes + Player-Status
+    menu.js             Karussell + Legende + Navigation
+    game.js             Canvas + Game-Loop
 controller/             Smartphone-Controller (Plugin-System)
   core.js               Shared: Verbindung, Gamepad-Protokoll, Overlays
   variants/classic/     Default-Variante

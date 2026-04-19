@@ -5,12 +5,16 @@ Alle nennenswerten Änderungen an RETROCON. Format orientiert an [Keep a Changel
 ## [Unreleased]
 
 ### Hinzugefügt
+- SPA-Architektur: Boot + Setup + Menü + Game in einem Dokument — Audio-Gesture bleibt gültig
+- `services/audio.js`: globaler AudioContext, im Boot-Klick erzeugt, an Spiele via `api.audioCtx`
+- Console als ES-Module aufgeteilt (`services/` + `views/` + `app.js` + `style.css`)
 - Hauptmenü: horizontales Spiele-Karussell mit Game-Cards (`artSvg` + `tagline` aus dem Spielmodul)
 - Menü-Legende „(A) SPIEL AUSWÄHLEN / (B) EINSTELLUNGEN" — B öffnet den Setup-Screen
 - Press Start 2P als Arcade-Schrift für Logo, Titel, Scores und Sieger-Screen (inkl. Canvas-Preload)
 - Pong: KI für jeden nicht verbundenen Spieler (auch P1, wenn nur P2 verbunden ist)
 
 ### Geändert
+- Root-`index.html` ist nur noch Redirect zu `console/` (SPA lebt komplett dort)
 - `console.html` → `console/index.html` (eigener Ordner)
 - Spiele in eigene Ordner: `games/pong.js` → `games/pong/pong.js`
 - Setup-Screen: neuer Titel „VERBINDE DEIN SMARTPHONE ALS GAME-CONTROLLER", einheitlicher Status „WARTE AUF VERBINDUNG" für beide Spieler, lesbarere SPIELER-Labels

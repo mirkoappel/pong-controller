@@ -14,6 +14,7 @@ window.RetroGames.pong = {
   create(ctx, W, H, numPlayers, api) {
     // api.exit()        → zurück zum Hauptmenü
     // api.getConns()    → Map(player → conn), verbundene Controller
+    // api.audioCtx      → globaler AudioContext (im Boot-Gesture erzeugt, darf nicht geschlossen werden)
     // api.code          → Raum-Code
     return {
       input(player, gamepad, prevGamepad) {},   // Eingabe verarbeiten
